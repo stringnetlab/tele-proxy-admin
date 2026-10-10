@@ -1,0 +1,41 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+/var/
+/www/tmp/
+/public/assets/build/
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+/test-output/
+/coverage/
+
+# Docker
+/docker/data/
+
+# Logs
+*.log
+
+# Composer
+composer.phar
+
+# Nette sandbox temp
+/sandbox/temp/

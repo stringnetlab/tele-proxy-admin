@@ -1,0 +1,51 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# PHP
+*.php text diff=php
+*.phpt text
+
+# Latte templates
+*.latte text
+
+# JavaScript / CSS
+*.js text
+*.css text
+*.map text
+
+# JSON / YAML
+*.json text
+*.yaml text
+*.yml text
+
+# Documentation
+*.md text
+*.txt text
+
+# Shell
+*.sh text eol=lf
+
+# Docker
+Dockerfile text
+*.dockerfile text
+
+# Binary / non-text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Export ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.editorconfig export-ignore
+/.github export-ignore
+/tests export-ignore
+/docs export-ignore
+*.md export-ignore
