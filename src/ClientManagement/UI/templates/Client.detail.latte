@@ -1,0 +1,55 @@
+{block content}
+<div class="page-header">
+	<h2>Cliente: {$client->name}</h2>
+	<div class="actions">
+		<a href="{plink edit, id => $client->cryptId}" class="btn btn-primary">Editar</a>
+		<a href="{plink clone, id => $client->cryptId}" class="btn btn-secondary">Clonar</a>
+		<a href="{plink rotateToken, id => $client->cryptId}" class="btn btn-warning" onclick="return confirm('¿Rotar el token? Esta acción invalidará el token actual.')">Rotar Token</a>
+		<a href="{plink rotateCryptId, id => $client->cryptId}" class="btn btn-warning" onclick="return confirm('¿Rotar el Crypt ID? Esta acción cambiará el identificador del cliente.')">Rotar ID</a>
+		<a href="{plink delete, id => $client->cryptId}" class="btn btn-danger" onclick="return confirm('¿Eliminar este cliente?')">Eliminar</a>
+	</div>
+</div>
+
+<div class="detail-card">
+	<div class="detail-row">
+		<label>Crypt ID:</label>
+		<span><code>{$client->cryptId}</code></span>
+	</div>
+	<div class="detail-row">
+		<label>Nombre:</label>
+		<span>{$client->name}</span>
+	</div>
+	<div class="detail-row">
+		<label>Dominio:</label>
+		<span>{$client->domain}</span>
+	</div>
+	<div class="detail-row">
+		<label>Rate Limit:</label>
+		<span>{$client->rateLimit->maxRequests} peticiones / {$client->rateLimit->windowSeconds} segundos</span>
+	</div>
+	<div class="detail-row">
+		<label>Whitelist:</label>
+		<div class="whitelist-tags">
+			{foreach $client->whitelist->domains as $domain}
+				<span class="tag">{$domain}</span>
+			{/foreach}
+		</div>
+	</div>
+	<div class="detail-row">
+		<label>Versión de configuración:</label>
+		<span>{$client->configVersion}</span>
+	</div>
+	<div class="detail-row">
+		<label>Creado:</label>
+		<span>{$client->createdAt|date:'Y-m-d H:i:s'}</span>
+	</div>
+	<div class="detail-row">
+		<label>Actualizado:</label>
+		<span>{$client->updatedAt|date:'Y-m-d H:i:s'}</span>
+	</div>
+</div>
+
+<div class="back-link">
+	<a href="{plink list}">&laquo; Volver a la lista</a>
+</div>
+{/block}

@@ -1,0 +1,35 @@
+parameters:
+
+application:
+	errorPresenter:
+		4xx: Error:Error4xx
+		5xx: Error:Error5xx
+	mapping:
+		*: [App, *, *Presenter]
+		Authentication: [App, Authentication, UI, *Presenter]
+		ClientManagement: [App, ClientManagement, UI, *Presenter]
+		AdminManagement: [App, AdminManagement, UI, *Presenter]
+
+session:
+	autoStart: false
+	cookieName: __Host-teleproxy_admin_ui
+	cookieSecure: true
+	cookieHttpOnly: true
+	cookieSameSite: Lax
+	expiration: 15m
+
+latte:
+	strictParsing: yes
+	extensions:
+		- App\Presentation\Accessory\LatteExtension
+
+di:
+	export:
+		parameters: no
+		tags: no
+
+http:
+	headers:
+		X-Content-Type-Options: nosniff
+		X-Frame-Options: DENY
+		Referrer-Policy: strict-origin-when-cross-origin

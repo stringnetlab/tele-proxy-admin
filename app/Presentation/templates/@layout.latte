@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>{ifset title}{include title} | {/ifset}TeleProxy Admin</title>
+	<link rel="stylesheet" href="{$basePath}/assets/css/admin.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.4/dist/css/tabulator_midnight.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-3.2.7.min.css">
+</head>
+<body>
+	<header class="header">
+		<div class="container">
+			<h1 class="logo">
+				<a href="{plink :ClientManagement:Client:list}">TeleProxy Admin</a>
+			</h1>
+			{if $presenter->isAdmin()}
+			<nav class="nav">
+				<a href="{plink :ClientManagement:Client:list}" class="nav-link">Clientes</a>
+				<a href="{plink :AdminManagement:Admin:list}" class="nav-link">Administradores</a>
+				<span class="nav-user">{$presenter->getAdminEmail()}</span>
+				<a href="{plink :Authentication:Login:logout}" class="nav-link logout">Cerrar sesión</a>
+			</nav>
+			{/if}
+		</div>
+	</header>
+
+	<main class="container">
+		{foreach $flashes as $flash}
+			<div class="flash flash-{$flash->type}">{$flash->message}</div>
+		{/foreach}
+
+		{include content}
+	</main>
+
+	<footer class="footer">
+		<div class="container">
+			<p>&copy; {date('Y')} stringnetlab. Todos los derechos reservados.</p>
+		</div>
+	</footer>
+
+	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.4/dist/js/tabulator.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-aio-3.2.7.min.js"></script>
+	<script src="https://unpkg.com/naja@2/dist/Naja.min.js"></script>
+	<script src="{$basePath}/assets/js/rumi.js"></script>
+	<script src="{$basePath}/assets/js/admin.js"></script>
+</body>
+</html>

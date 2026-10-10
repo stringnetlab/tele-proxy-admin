@@ -1,0 +1,45 @@
+{block content}
+<div class="page-header">
+	<h2>Administradores</h2>
+	<div class="actions">
+		<a href="{plink create}" class="btn btn-primary">Nuevo administrador</a>
+	</div>
+</div>
+
+<div class="table-container">
+	<table id="admins-table" class="table">
+		<thead>
+			<tr>
+				<th>Email</th>
+				<th>Rol</th>
+				<th>Estado</th>
+				<th>Creado</th>
+				<th>Acciones</th>
+			</tr>
+		</thead>
+		<tbody>
+			{foreach $admins as $admin}
+			<tr>
+				<td>{$admin['email']}</td>
+				<td><span class="badge badge-{$admin['role']}">{$admin['role']}</span></td>
+				<td>
+					{if $admin['active']}
+						<span class="badge badge-active">Activo</span>
+					{else}
+						<span class="badge badge-inactive">Inactivo</span>
+					{/if}
+				</td>
+				<td>{$admin['created_at']|date:'Y-m-d H:i'}</td>
+				<td class="actions">
+					<a href="{plink detail, email => $admin['email']}" class="btn btn-sm">Ver</a>
+					<a href="{plink toggle, email => $admin['email']}" class="btn btn-sm">
+						{if $admin['active']}Desactivar{else}Activar{/if}
+					</a>
+					<a href="{plink delete, email => $admin['email']}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este administrador?')">Eliminar</a>
+				</td>
+			</tr>
+			{/foreach}
+		</tbody>
+	</table>
+</div>
+{/block}

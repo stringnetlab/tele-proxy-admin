@@ -1,0 +1,44 @@
+{block content}
+<div class="page-header">
+	<h2>Administrador: {$admin->email}</h2>
+	<div class="actions">
+		<a href="{plink toggle, email => $admin->email}" class="btn btn-warning">
+			{if $admin->active}Desactivar{else}Activar{/if}
+		</a>
+		<a href="{plink delete, email => $admin->email}" class="btn btn-danger" onclick="return confirm('¿Eliminar este administrador?')">Eliminar</a>
+	</div>
+</div>
+
+<div class="detail-card">
+	<div class="detail-row">
+		<label>Email:</label>
+		<span>{$admin->email}</span>
+	</div>
+	<div class="detail-row">
+		<label>Rol:</label>
+		<span><span class="badge badge-{$admin->role}">{$admin->role}</span></span>
+	</div>
+	<div class="detail-row">
+		<label>Estado:</label>
+		<span>
+			{if $admin->active}
+				<span class="badge badge-active">Activo</span>
+			{else}
+				<span class="badge badge-inactive">Inactivo</span>
+			{/if}
+		</span>
+	</div>
+	<div class="detail-row">
+		<label>Creado:</label>
+		<span>{$admin->createdAt|date:'Y-m-d H:i:s'}</span>
+	</div>
+	<div class="detail-row">
+		<label>Creado por:</label>
+		<span>{$admin->createdBy}</span>
+	</div>
+</div>
+
+<div class="back-link">
+	<a href="{plink list}">&laquo; Volver a la lista</a>
+</div>
+{/block}

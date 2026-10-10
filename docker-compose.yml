@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  admin-teleproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: admin-teleproxy
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    environment:
+      - CADDY_DOMAIN=${CADDY_DOMAIN:-:80}
+      - PUBLIC_API_URL=${PUBLIC_API_URL:-https://apiteleproxy.velone.ai}
+      - COUCHDB_URL=${COUCHDB_URL:-http://couchdb:5984}
+      - COUCHDB_DATABASE=${COUCHDB_DATABASE:-tele_proxy_admin}
+      - VALKEY_URL=${VALKEY_URL:-redis://valkey:6379}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - LOGIN_BANDWIDTH_LIMIT_KIB=${LOGIN_BANDWIDTH_LIMIT_KIB:-64}
+      - TZ_DISPLAY=${TZ_DISPLAY:-America/Lima}
+    volumes:
+      - ./var/log:/app/var/log
+      - ./temp:/app/temp
+    depends_on:
+      - couchdb
+      - valkey
+    networks:
+      - teleproxy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_ok"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  couchdb:
+    image: couchdb:3.3
+    container_name: admin-couchdb
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER:-admin}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    networks:
+      - teleproxy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  valkey:
+    image: valkey/valkey:7.2
+    container_name: admin-valkey
+    restart: unless-stopped
+    command: valkey-server --requirepass ${VALKEY_PASSWORD}
+    environment:
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
+    volumes:
+      - valkey-data:/data
+    networks:
+      - teleproxy-network
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  couchdb-data:
+  valkey-data:
+
+networks:
+  teleproxy-network:
+    driver: bridge

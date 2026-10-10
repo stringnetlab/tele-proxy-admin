@@ -1,0 +1,83 @@
+parameters:
+	apiUrl: %env.PUBLIC_API_URL%
+	couchDbUrl: %env.COUCHDB_URL%
+	couchDbDatabase: %env.COUCHDB_DATABASE%
+	valkeyUrl: %env.VALKEY_URL%
+	sessionSecret: %env.SESSION_SECRET%
+	loginBandwidthLimitKib: 64
+	tzDisplay: America/Lima
+
+services:
+	- App\Core\RouterFactory::createRouter
+
+	# Shared Infrastructure
+	shared.apiClient:
+		type: App\Shared\Infrastructure\ApiClient
+		arguments:
+			apiUrl: %apiUrl%
+
+	shared.couchDbConnection:
+		type: App\Shared\Infrastructure\CouchDbConnection
+		arguments:
+			couchDbUrl: %couchDbUrl%
+			database: %couchDbDatabase%
+
+	shared.valkeyConnection:
+		type: App\Shared\Infrastructure\ValkeyConnection
+		arguments:
+			valkeyUrl: %valkeyUrl%
+
+	shared.rateLimiter:
+		type: App\Shared\Infrastructure\RateLimiter
+		arguments:
+			valkey: @shared.valkeyConnection
+
+	shared.bandwidthLimiter:
+		type: App\Shared\Infrastructure\BandwidthLimiter
+		arguments:
+			limitKib: %loginBandwidthLimitKib%
+
+	# Authentication
+	auth.sessionRepository:
+		type: App\Authentication\Infrastructure\CouchDbSessionRepository
+		arguments:
+			connection: @shared.couchDbConnection
+
+	auth.singleSessionStore:
+		type: App\Authentication\Infrastructure\ValkeySingleSessionStore
+		arguments:
+			valkey: @shared.valkeyConnection
+
+	auth.apiAuthAdapter:
+		type: App\Authentication\Infrastructure\ApiAuthAdapter
+		arguments:
+			apiClient: @shared.apiClient
+
+	# Client Management
+	client.repository:
+		type: App\ClientManagement\Infrastructure\ApiClientRepository
+		arguments:
+			apiClient: @shared.apiClient
+
+	# Admin Management
+	admin.repository:
+		type: App\AdminManagement\Infrastructure\ApiAdminRepository
+		arguments:
+			apiClient: @shared.apiClient
+
+search:
+	-	in: %appDir%
+		classes:
+			- *Facade
+			- *Factory
+			- *Repository
+			- *Service
+	-	in: %appDir%/../src
+		classes:
+			- *Facade
+			- *Factory
+			- *Repository
+			- *Service
+			- *Handler
+			- *Store
+			- *Adapter

@@ -1,0 +1,41 @@
+{block content}
+<div class="page-header">
+	<h2>Nuevo cliente</h2>
+</div>
+
+<div class="form-container">
+	<form n:name="clientForm">
+		<div class="form-group">
+			<label n:name="name">Nombre</label>
+			<input n:name="name" class="form-control">
+		</div>
+
+		<div class="form-group">
+			<label n:name="domain">Dominio</label>
+			<input n:name="domain" class="form-control">
+		</div>
+
+		<div class="form-group">
+			<label n:name="whitelist">Whitelist (un dominio por línea)</label>
+			<textarea n:name="whitelist" class="form-control" rows="5"></textarea>
+		</div>
+
+		<div class="form-row">
+			<div class="form-group">
+				<label n:name="rate_limit_requests">Rate limit (peticiones)</label>
+				<input n:name="rate_limit_requests" class="form-control" type="number">
+			</div>
+
+			<div class="form-group">
+				<label n:name="rate_limit_window">Ventana (segundos)</label>
+				<input n:name="rate_limit_window" class="form-control" type="number">
+			</div>
+		</div>
+
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary">Crear cliente</button>
+			<a href="{plink list}" class="btn btn-secondary">Cancelar</a>
+		</div>
+	</form>
+</div>
+{/block}
