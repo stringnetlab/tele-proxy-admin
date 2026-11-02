@@ -10,16 +10,19 @@ services:
     ports:
       - "8082:80"
     environment:
+      - APP_ENV=production
       - CADDY_DOMAIN=${CADDY_DOMAIN:-:80}
       - PUBLIC_API_URL=${PUBLIC_API_URL:-https://apiteleproxy.velone.ai}
       - COUCHDB_URL=${COUCHDB_URL:-http://couchdb:5984}
-      - COUCHDB_DATABASE=${COUCHDB_DATABASE:-tele_proxy_admin}
+      - COUCHDB_DATABASE=${COUCHDB_DATABASE:-teleproxy_admin}
       - VALKEY_URL=${VALKEY_URL:-redis://valkey:6379}
       - SESSION_SECRET=${SESSION_SECRET}
-      - LOGIN_BANDWIDTH_LIMIT_KIB=${LOGIN_BANDWIDTH_LIMIT_KIB:-64}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+      - LOGIN_RATE_LIMIT_REQUESTS=${LOGIN_RATE_LIMIT_REQUESTS:-5}
+      - LOGIN_RATE_LIMIT_WINDOW_SECONDS=${LOGIN_RATE_LIMIT_WINDOW_SECONDS:-60}
       - TZ_DISPLAY=${TZ_DISPLAY:-America/Lima}
     volumes:
-      - ./var/log:/app/var/log
+      - ./log:/app/log
       - ./temp:/app/temp
     depends_on:
       - couchdb

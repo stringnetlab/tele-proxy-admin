@@ -23,11 +23,10 @@ COPY . .
 
 RUN composer run-script post-install-cmd --no-interaction || true
 
-RUN mkdir -p var/log temp && \
-    chown -R www-data:www-data var temp
+RUN mkdir -p log temp && \
+    chown -R www-data:www-data log temp
 
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
+ENV APP_ENV=production
 
 EXPOSE 80
 
