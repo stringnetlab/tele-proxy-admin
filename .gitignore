@@ -1,6 +1,5 @@
 # Dependencies
 /vendor/
-/node_modules/
 
 # Environment
 .env
@@ -9,12 +8,13 @@
 
 # Build artifacts
 /var/
+/temp/
 /www/tmp/
-/public/assets/build/
 
 # IDE
 /.idea/
 /.vscode/
+/.qoder/settings.local.json
 *.swp
 *.swo
 *~
@@ -33,6 +33,7 @@ desktop.ini
 
 # Logs
 *.log
+/log/
 
 # Composer
 composer.phar

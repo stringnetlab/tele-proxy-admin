@@ -1,83 +1,70 @@
 // TeleProxy Admin - Main JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
-	// Initialize Notiflix
-	Notiflix.Notify.init({
-		width: '320px',
-		position: 'right-top',
-		distance: '10px',
-		opacity: 1,
-		borderRadius: '4px',
-		fontSize: '14px',
-		timeout: 3000,
+if (window.netteForms) {
+	window.netteForms.initOnLoad();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+	document.addEventListener('click', function (event) {
+		const target = event.target.closest('[data-confirm]');
+		if (target && !window.confirm(target.dataset.confirm)) {
+			event.preventDefault();
+		}
 	});
 
-	// Master token reveal toggle
-	const revealButton = document.getElementById('reveal-master-token');
-	const masterTokenForm = document.getElementById('master-token-form');
+	document.addEventListener('click', function (event) {
+		const button = event.target.closest('[data-copy-target]');
+		if (!button) {
+			return;
+		}
 
-	if (revealButton && masterTokenForm) {
-		revealButton.addEventListener('click', function() {
-			masterTokenForm.classList.toggle('hidden');
-		});
-	}
+		const source = document.getElementById(button.dataset.copyTarget);
+		if (!source) {
+			return;
+		}
 
-	// Initialize Tabulator for clients table
-	const clientsTable = document.getElementById('clients-table');
-	if (clientsTable && typeof Tabulator !== 'undefined') {
-		new Tabulator('#clients-table', {
-			layout: 'fitColumns',
-			responsiveLayout: 'hide',
-			placeholder: 'No hay clientes disponibles',
-			columns: [
-				{ title: 'Crypt ID', field: 'crypt_id', width: 150 },
-				{ title: 'Nombre', field: 'name', minWidth: 150 },
-				{ title: 'Dominio', field: 'domain', minWidth: 150 },
-				{ title: 'Rate Limit', field: 'rate_limit', minWidth: 120 },
-				{ title: 'Acciones', field: 'actions', minWidth: 200, sortable: false },
-			],
-		});
-	}
+		const token = source.textContent.trim();
+		const done = function () {
+			button.textContent = 'Copiado';
+		};
 
-	// Initialize Tabulator for admins table
-	const adminsTable = document.getElementById('admins-table');
-	if (adminsTable && typeof Tabulator !== 'undefined') {
-		new Tabulator('#admins-table', {
-			layout: 'fitColumns',
-			responsiveLayout: 'hide',
-			placeholder: 'No hay administradores disponibles',
-			columns: [
-				{ title: 'Email', field: 'email', minWidth: 200 },
-				{ title: 'Rol', field: 'role', width: 100 },
-				{ title: 'Estado', field: 'active', width: 100 },
-				{ title: 'Creado', field: 'created_at', width: 150 },
-				{ title: 'Acciones', field: 'actions', minWidth: 200, sortable: false },
-			],
-		});
-	}
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(token).then(done, function () {
+				fallbackCopy(token, done);
+			});
+			return;
+		}
 
-	// Initialize Naja for AJAX
-	if (typeof Naja !== 'undefined') {
-		const naja = new Naja();
-		naja.initialize();
-	}
+		fallbackCopy(token, done);
+	});
 
-	// Confirmation dialogs for dangerous actions
-	const deleteLinks = document.querySelectorAll('a[href*="delete"]');
-	deleteLinks.forEach(function(link) {
-		link.addEventListener('click', function(e) {
-			if (!confirm('¿Estás seguro de que quieres eliminar este elemento?')) {
-				e.preventDefault();
+	const tokenConfirm = document.getElementById('token-confirm');
+	const tokenContinue = document.getElementById('token-continue');
+	if (tokenConfirm && tokenContinue) {
+		const update = function () {
+			tokenContinue.classList.toggle('disabled', !tokenConfirm.checked);
+			tokenContinue.setAttribute('aria-disabled', String(!tokenConfirm.checked));
+		};
+
+		tokenConfirm.addEventListener('change', update);
+		tokenContinue.addEventListener('click', function (event) {
+			if (!tokenConfirm.checked) {
+				event.preventDefault();
 			}
 		});
-	});
-
-	const rotateLinks = document.querySelectorAll('a[href*="rotate"]');
-	rotateLinks.forEach(function(link) {
-		link.addEventListener('click', function(e) {
-			if (!confirm('¿Estás seguro de que quieres rotar este elemento? Esta acción no se puede deshacer.')) {
-				e.preventDefault();
-			}
-		});
-	});
+		update();
+	}
 });
+
+function fallbackCopy(text, done) {
+	const area = document.createElement('textarea');
+	area.value = text;
+	area.setAttribute('readonly', '');
+	area.style.position = 'absolute';
+	area.style.left = '-9999px';
+	document.body.appendChild(area);
+	area.select();
+	document.execCommand('copy');
+	document.body.removeChild(area);
+	done();
+}

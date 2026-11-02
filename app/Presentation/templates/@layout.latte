@@ -6,8 +6,6 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<title>{ifset title}{include title} | {/ifset}TeleProxy Admin</title>
 	<link rel="stylesheet" href="{$basePath}/assets/css/admin.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.4/dist/css/tabulator_midnight.min.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-3.2.7.min.css">
 </head>
 <body>
 	<header class="header">
@@ -19,8 +17,11 @@
 			<nav class="nav">
 				<a href="{plink :ClientManagement:Client:list}" class="nav-link">Clientes</a>
 				<a href="{plink :AdminManagement:Admin:list}" class="nav-link">Administradores</a>
+				<a href="{plink :SettingsManagement:Settings:default}" class="nav-link">Ajustes</a>
 				<span class="nav-user">{$presenter->getAdminEmail()}</span>
-				<a href="{plink :Authentication:Login:logout}" class="nav-link logout">Cerrar sesión</a>
+				{form logoutForm, class => 'logout-form'}
+					<button type="submit" class="nav-link logout">Cerrar sesión</button>
+				{/form}
 			</nav>
 			{/if}
 		</div>
@@ -40,10 +41,7 @@
 		</div>
 	</footer>
 
-	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.4/dist/js/tabulator.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-aio-3.2.7.min.js"></script>
-	<script src="https://unpkg.com/naja@2/dist/Naja.min.js"></script>
-	<script src="{$basePath}/assets/js/rumi.js"></script>
+	<script src="{$basePath}/assets/js/netteForms.min.js"></script>
 	<script src="{$basePath}/assets/js/admin.js"></script>
 </body>
 </html>

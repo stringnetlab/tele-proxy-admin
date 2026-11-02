@@ -534,3 +534,51 @@ code {
 		overflow-x: auto;
 	}
 }
+
+/* Token de un solo uso */
+.token-value {
+	background-color: var(--bg-secondary);
+	border: 1px solid var(--border-color);
+	border-radius: 4px;
+	padding: 1rem;
+	overflow-x: auto;
+	font-family: 'Courier New', monospace;
+	word-break: break-all;
+}
+
+.token-value code {
+	background: none;
+	padding: 0;
+}
+
+.token-entry + .token-entry {
+	margin-top: 1.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--border-color);
+}
+
+.actions-card {
+	margin-bottom: 2rem;
+}
+
+.muted {
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+
+.btn.disabled,
+.btn[aria-disabled='true'] {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+form > h3 {
+	margin: 1.75rem 0 0.75rem;
+	border-bottom: 1px solid var(--border-color);
+	padding-bottom: 0.5rem;
+}
+
+.form-group input[type='checkbox'] {
+	width: auto;
+	margin-right: 0.5rem;
+}
