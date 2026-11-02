@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Healthcheck;
+namespace App\Presentation\Healthcheck;
 
 use Nette\Application\UI\Presenter;
 

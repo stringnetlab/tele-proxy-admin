@@ -1,12 +1,5 @@
-parameters:
-	apiUrl: %env.PUBLIC_API_URL%
-	couchDbUrl: %env.COUCHDB_URL%
-	couchDbDatabase: %env.COUCHDB_DATABASE%
-	valkeyUrl: %env.VALKEY_URL%
-	sessionSecret: %env.SESSION_SECRET%
-	loginBandwidthLimitKib: 64
-	tzDisplay: America/Lima
-
+# Los parametros (%apiUrl%, %couchDbUrl%, ...) los inyecta App\Bootstrap desde las variables de entorno,
+# con sus valores por defecto. Neon no resuelve %env.X%.
 services:
 	- App\Core\RouterFactory::createRouter
 
@@ -25,17 +18,30 @@ services:
 	shared.valkeyConnection:
 		type: App\Shared\Infrastructure\ValkeyConnection
 		arguments:
-			valkeyUrl: %valkeyUrl%
+			valkeyUrl: %valkeyDsn%
 
 	shared.rateLimiter:
 		type: App\Shared\Infrastructure\RateLimiter
 		arguments:
 			valkey: @shared.valkeyConnection
 
-	shared.bandwidthLimiter:
-		type: App\Shared\Infrastructure\BandwidthLimiter
+	shared.apiCookieCipher:
+		type: App\Shared\Infrastructure\ApiCookieCipher
 		arguments:
-			limitKib: %loginBandwidthLimitKib%
+			secret: %sessionSecret%
+
+	shared.clientIpResolver:
+		type: App\Shared\Infrastructure\ClientIpResolver
+		arguments:
+			trustedProxies: %trustedProxies%
+
+	shared.apiSession:
+		type: App\Shared\Infrastructure\ApiSession
+
+	shared.tokenVault:
+		type: App\Shared\Infrastructure\TokenVault
+		arguments:
+			valkey: @shared.valkeyConnection
 
 	# Authentication
 	auth.sessionRepository:
@@ -53,17 +59,34 @@ services:
 		arguments:
 			apiClient: @shared.apiClient
 
+	auth.loginRateLimiter:
+		type: App\Authentication\Application\LoginRateLimiter
+		arguments:
+			limiter: @shared.rateLimiter
+			clientIpResolver: @shared.clientIpResolver
+			maxRequests: %loginRateLimitRequests%
+			windowSeconds: %loginRateLimitWindowSeconds%
+
 	# Client Management
 	client.repository:
 		type: App\ClientManagement\Infrastructure\ApiClientRepository
 		arguments:
 			apiClient: @shared.apiClient
+			apiSession: @shared.apiSession
 
 	# Admin Management
 	admin.repository:
 		type: App\AdminManagement\Infrastructure\ApiAdminRepository
 		arguments:
 			apiClient: @shared.apiClient
+			apiSession: @shared.apiSession
+
+	# Settings Management
+	settings.repository:
+		type: App\SettingsManagement\Infrastructure\ApiSettingsRepository
+		arguments:
+			apiClient: @shared.apiClient
+			apiSession: @shared.apiSession
 
 search:
 	-	in: %appDir%
@@ -72,6 +95,7 @@ search:
 			- *Factory
 			- *Repository
 			- *Service
+			- *Presenter
 	-	in: %appDir%/../src
 		classes:
 			- *Facade
@@ -81,3 +105,4 @@ search:
 			- *Handler
 			- *Store
 			- *Adapter
+			- *Presenter

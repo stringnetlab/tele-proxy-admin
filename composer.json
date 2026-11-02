@@ -19,7 +19,8 @@
         "tracy/tracy": "^2.10",
         "guzzlehttp/guzzle": "^7.8",
         "predis/predis": "^2.2",
-        "guzzlehttp/promises": "^2.0"
+        "guzzlehttp/promises": "^2.0",
+        "mnohosten/tracy-markdown": "^1.0"
     },
     "require-dev": {
         "nette/tester": "^2.5",
@@ -27,7 +28,8 @@
         "phpstan/extension-installer": "^1.4",
         "nette/phpstan-rules": "^1.0",
         "phpunit/phpunit": "^11.0",
-        "behat/behat": "^3.14"
+        "behat/behat": "^3.14",
+        "nette/mcp-inspector": "@dev"
     },
     "autoload": {
         "psr-4": {
@@ -35,7 +37,8 @@
             "App\\Shared\\": "src/Shared",
             "App\\Authentication\\": "src/Authentication",
             "App\\ClientManagement\\": "src/ClientManagement",
-            "App\\AdminManagement\\": "src/AdminManagement"
+            "App\\AdminManagement\\": "src/AdminManagement",
+            "App\\SettingsManagement\\": "src/SettingsManagement"
         }
     },
     "autoload-dev": {
@@ -56,7 +59,8 @@
     "minimum-stability": "stable",
     "config": {
         "allow-plugins": {
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "php-http/discovery": true
         }
     }
 }
