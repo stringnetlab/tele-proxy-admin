@@ -27,7 +27,7 @@ final class RateLimit
 
 
 	/**
-	 * @param array<string, int> $data
+	 * @param array<string, mixed> $data
 	 */
 	public static function fromArray(array $data): self
 	{

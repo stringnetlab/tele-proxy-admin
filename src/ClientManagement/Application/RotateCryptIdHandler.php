@@ -15,8 +15,8 @@ final class RotateCryptIdHandler
 	/**
 	 * @return array{new_crypt_id: string, rotated_at: string}
 	 */
-	public function handle(string $cryptId): array
+	public function handle(string $internalId): array
 	{
-		return $this->clientRepository->rotateCryptId($cryptId);
+		return $this->clientRepository->rotateCryptId($internalId);
 	}
 }

@@ -6,42 +6,43 @@ namespace App\ClientManagement\Domain;
 interface ClientRepository
 {
 	/**
-	 * @return array{clients: array<int, array<string, mixed>>, total: int}
+	 * @return array{clients: list<Client>, total: int}
 	 */
 	public function list(int $limit = 50, int $skip = 0): array;
 
 
-	/**
-	 * @return array<string, mixed>|null
-	 */
-	public function get(string $id): ?array;
+	public function get(string $internalId): ?Client;
 
 
 	/**
-	 * @param array<string, mixed> $data
-	 * @return array{token: string, client: array<string, mixed>}
+	 * @return array{token: string, client: Client}
 	 */
-	public function create(array $data = []): array;
+	public function create(bool $wildcard): array;
 
 
 	/**
-	 * @param array<string, mixed> $data
-	 * @return array{config_version: int, updated_at: string}
+	 * @param array<string, mixed> $payload
 	 */
-	public function update(string $id, array $data): array;
+	public function update(string $internalId, array $payload): int;
 
 
-	public function delete(string $id): void;
+	public function delete(string $internalId): void;
 
 
 	/**
-	 * @return array{token: string, client: array<string, mixed>}
+	 * @return array{token: string, client: Client}
 	 */
-	public function rotateToken(string $id): array;
+	public function rotateToken(string $internalId): array;
 
 
 	/**
 	 * @return array{new_crypt_id: string, rotated_at: string}
 	 */
-	public function rotateCryptId(string $id): array;
+	public function rotateCryptId(string $internalId): array;
+
+
+	/**
+	 * @return array{purged_keys: int, pattern: string, purged_at: string}
+	 */
+	public function purgeCache(string $internalId): array;
 }

@@ -13,8 +13,8 @@ final class GetClientHandler
 	) {}
 
 
-	public function handle(string $cryptId): ?Client
+	public function handle(string $internalId): ?Client
 	{
-		return $this->clientRepository->get($cryptId);
+		return $this->clientRepository->get($internalId);
 	}
 }

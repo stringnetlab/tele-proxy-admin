@@ -1,55 +1,152 @@
 {block content}
 <div class="page-header">
-	<h2>Cliente: {$client->name}</h2>
-	<div class="actions">
-		<a href="{plink edit, id => $client->cryptId}" class="btn btn-primary">Editar</a>
-		<a href="{plink clone, id => $client->cryptId}" class="btn btn-secondary">Clonar</a>
-		<a href="{plink rotateToken, id => $client->cryptId}" class="btn btn-warning" onclick="return confirm('¿Rotar el token? Esta acción invalidará el token actual.')">Rotar Token</a>
-		<a href="{plink rotateCryptId, id => $client->cryptId}" class="btn btn-warning" onclick="return confirm('¿Rotar el Crypt ID? Esta acción cambiará el identificador del cliente.')">Rotar ID</a>
-		<a href="{plink delete, id => $client->cryptId}" class="btn btn-danger" onclick="return confirm('¿Eliminar este cliente?')">Eliminar</a>
-	</div>
+	<h2>Cliente <code>{$client->cryptId}</code></h2>
+	<a href="{plink list}" class="btn btn-secondary">Volver a la lista</a>
 </div>
 
 <div class="detail-card">
-	<div class="detail-row">
-		<label>Crypt ID:</label>
-		<span><code>{$client->cryptId}</code></span>
-	</div>
-	<div class="detail-row">
-		<label>Nombre:</label>
-		<span>{$client->name}</span>
-	</div>
-	<div class="detail-row">
-		<label>Dominio:</label>
-		<span>{$client->domain}</span>
-	</div>
-	<div class="detail-row">
-		<label>Rate Limit:</label>
-		<span>{$client->rateLimit->maxRequests} peticiones / {$client->rateLimit->windowSeconds} segundos</span>
-	</div>
-	<div class="detail-row">
-		<label>Whitelist:</label>
-		<div class="whitelist-tags">
-			{foreach $client->whitelist->domains as $domain}
-				<span class="tag">{$domain}</span>
-			{/foreach}
-		</div>
-	</div>
-	<div class="detail-row">
-		<label>Versión de configuración:</label>
-		<span>{$client->configVersion}</span>
-	</div>
-	<div class="detail-row">
-		<label>Creado:</label>
-		<span>{$client->createdAt|date:'Y-m-d H:i:s'}</span>
-	</div>
-	<div class="detail-row">
-		<label>Actualizado:</label>
-		<span>{$client->updatedAt|date:'Y-m-d H:i:s'}</span>
-	</div>
+	<div class="detail-row"><label>internal_id</label><span><code>{$client->internalId}</code></span></div>
+	<div class="detail-row"><label>crypt_id</label><span><code>{$client->cryptId}</code></span></div>
+	<div class="detail-row"><label>kind</label><span>{$client->kind}</span></div>
+	<div class="detail-row"><label>config_version</label><span>{$client->configVersion}</span></div>
 </div>
 
-<div class="back-link">
-	<a href="{plink list}">&laquo; Volver a la lista</a>
-</div>
+{form actionsForm, class => 'detail-card actions-card'}
+	<p class="muted">Las acciones se aplican de inmediato sobre el cliente.</p>
+	<div class="form-row">
+		<button n:name="rotateToken" class="btn btn-warning" data-confirm="¿Rotar el token? El token actual dejará de funcionar.">Rotar token</button>
+		<button n:name="rotateCryptId" class="btn btn-warning" data-confirm="¿Rotar el crypt_id? Las URLs /aq/&#123;crypt_id&#125;/ cambiarán.">Rotar crypt_id</button>
+		<button n:name="purgeCache" class="btn btn-secondary" data-confirm="¿Purgar la caché de este cliente?">Purgar caché</button>
+		<button n:name="clone" class="btn btn-secondary" data-confirm="¿Clonar este cliente? Se creará uno nuevo con la misma configuración y un token nuevo.">Clonar</button>
+	</div>
+	<div class="form-row">
+		<div class="form-group">
+			{label confirm_id /}
+			{input confirm_id class => 'form-control'}
+		</div>
+		<button n:name="delete" class="btn btn-danger" data-confirm="¿Eliminar definitivamente este cliente?">Eliminar cliente</button>
+	</div>
+	{input errors}
+{/form}
+
+{form clientForm}
+	<h3>Salida</h3>
+	<div class="form-group">
+		<label>{input wildcard} Salida libre (wildcard)</label>
+		<small class="muted">Salta la whitelist. El anti-SSRF de IP sigue aplicando.</small>
+	</div>
+
+	<h3>Whitelist</h3>
+	<div class="form-group">
+		{label whitelist /}
+		{input whitelist class => 'form-control'}
+		<small class="muted">Una entrada por línea: <code>host</code> o <code>host:puerto</code>. Sin comodines ni rutas; máximo 100.</small>
+	</div>
+
+	<h3>Rate limit</h3>
+	<div class="form-row">
+		<div class="form-group">
+			{label rate_limit_max_requests /}
+			{input rate_limit_max_requests class => 'form-control'}
+		</div>
+		<div class="form-group">
+			{label rate_limit_window_seconds /}
+			{input rate_limit_window_seconds class => 'form-control'}
+		</div>
+	</div>
+
+	<h3>Scripting Lua</h3>
+	<div class="form-group">
+		<label>{input scripting_enabled} Scripting activado</label>
+	</div>
+	<div class="form-group">
+		{label scripting_code /}
+		{input scripting_code class => 'form-control'}
+	</div>
+	<div class="form-group">
+		{label scripting_expression /}
+		{input scripting_expression class => 'form-control'}
+	</div>
+	<div class="form-group">
+		{label max_scripting_body_bytes /}
+		{input max_scripting_body_bytes class => 'form-control'}
+	</div>
+
+	<h3>Manejo de errores</h3>
+	<div class="form-group">
+		{label error_handling_mode /}
+		{input error_handling_mode class => 'form-control'}
+	</div>
+	<div class="form-group">
+		{label fallback_urls /}
+		{input fallback_urls class => 'form-control'}
+	</div>
+
+	<h3>Reglas de headers</h3>
+	<div class="form-group">
+		{label header_rules /}
+		{input header_rules class => 'form-control'}
+		<small class="muted">Máximo 50 reglas; cada una con expresión, acción <code>set</code> y hasta 10 headers.</small>
+	</div>
+
+	<h3>Preview</h3>
+	<div class="form-row">
+		<div class="form-group"><label>{input preview_enabled} /pv/ activado</label></div>
+		<div class="form-group"><label>{input preview_meta_enabled} /mt/ activado</label></div>
+	</div>
+	<div class="form-row">
+		<div class="form-group"><label>{input preview_cap_meta} meta</label></div>
+		<div class="form-group"><label>{input preview_cap_content} content</label></div>
+		<div class="form-group"><label>{input preview_cap_screenshot} screenshot</label></div>
+		<div class="form-group"><label>{input preview_cap_pdf} pdf</label></div>
+	</div>
+	<div class="form-row">
+		<div class="form-group">
+			{label preview_rate_limit_max_requests /}
+			{input preview_rate_limit_max_requests class => 'form-control'}
+		</div>
+		<div class="form-group">
+			{label preview_rate_limit_window_seconds /}
+			{input preview_rate_limit_window_seconds class => 'form-control'}
+		</div>
+	</div>
+	<div class="form-row">
+		<div class="form-group">
+			{label preview_ttl_default_seconds /}
+			{input preview_ttl_default_seconds class => 'form-control'}
+		</div>
+		<div class="form-group">
+			{label preview_ttl_max_seconds /}
+			{input preview_ttl_max_seconds class => 'form-control'}
+		</div>
+	</div>
+	<div class="form-row">
+		<div class="form-group">
+			{label preview_max_render_timeout_ms /}
+			{input preview_max_render_timeout_ms class => 'form-control'}
+		</div>
+		<div class="form-group">
+			{label preview_max_body_bytes /}
+			{input preview_max_body_bytes class => 'form-control'}
+		</div>
+	</div>
+	<div class="form-row">
+		<div class="form-group"><label>{input preview_max_full_page} Captura de página completa</label></div>
+		<div class="form-group">
+			{label preview_viewport_width /}
+			{input preview_viewport_width class => 'form-control'}
+		</div>
+		<div class="form-group">
+			{label preview_viewport_height /}
+			{input preview_viewport_height class => 'form-control'}
+		</div>
+	</div>
+
+	{input errors}
+
+	<div class="form-actions">
+		{input save class => 'btn btn-primary'}
+		<a href="{plink detail, id => $client->internalId}" class="btn btn-secondary">Descartar cambios</a>
+	</div>
+{/form}
 {/block}

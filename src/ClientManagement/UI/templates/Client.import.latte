@@ -1,0 +1,35 @@
+{block content}
+<div class="page-header">
+	<h2>Importar clientes</h2>
+	<div class="actions">
+		<a href="{plink export}" class="btn btn-secondary">Exportar actuales</a>
+	</div>
+</div>
+
+<div class="form-container">
+	{form importForm}
+		<p class="muted">
+			Acepta el JSON generado por la exportación (<code>teleproxy-clients/v1</code>).
+			Máximo 100 clientes y 10 MB. Cada cliente se crea vacío y luego se aplica su configuración;
+			si la configuración falla, el cliente creado se elimina.
+		</p>
+
+		<div class="form-group">
+			{label payload}JSON exportado{/label}
+			{input payload}
+		</div>
+
+		<div class="form-group">
+			{label file}Archivo JSON (opcional, tiene prioridad){/label}
+			{input file}
+		</div>
+
+		{input errors}
+
+		<div class="form-actions">
+			{input import class => 'btn btn-primary'}
+			<a href="{plink list}" class="btn btn-secondary">Cancelar</a>
+		</div>
+	{/form}
+</div>
+{/block}

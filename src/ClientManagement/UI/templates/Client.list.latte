@@ -2,48 +2,69 @@
 <div class="page-header">
 	<h2>Clientes</h2>
 	<div class="actions">
-		<a href="{plink create}" class="btn btn-primary">Nuevo cliente</a>
+		<a href="{plink import}" class="btn btn-secondary">Importar</a>
 		<a href="{plink export}" class="btn btn-secondary">Exportar</a>
+		<a href="{plink create}" class="btn btn-primary">Nuevo cliente</a>
 	</div>
 </div>
 
 <div class="table-container">
-	<table id="clients-table" class="table">
+	<table class="table">
 		<thead>
 			<tr>
-				<th>Crypt ID</th>
-				<th>Nombre</th>
-				<th>Dominio</th>
-				<th>Rate Limit</th>
+				<th>crypt_id</th>
+				<th>kind</th>
+				<th>Wildcard</th>
+				<th>Whitelist</th>
+				<th>Rate limit</th>
+				<th>Versión</th>
+				<th>Preview</th>
 				<th>Acciones</th>
 			</tr>
 		</thead>
 		<tbody>
 			{foreach $clients as $client}
-			<tr>
-				<td><code>{$client['crypt_id']}</code></td>
-				<td>{$client['name']}</td>
-				<td>{$client['domain']}</td>
-				<td>{$client['rate_limit']['max_requests'] ?? 50}/{$client['rate_limit']['window_seconds'] ?? 60}s</td>
-				<td class="actions">
-					<a href="{plink detail, id => $client['crypt_id']}" class="btn btn-sm">Ver</a>
-					<a href="{plink edit, id => $client['crypt_id']}" class="btn btn-sm">Editar</a>
-					<a href="{plink delete, id => $client['crypt_id']}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este cliente?')">Eliminar</a>
-				</td>
-			</tr>
+				{var $entries = $client->whitelist->entries()}
+				<tr>
+					<td><code>{$client->cryptId}</code></td>
+					<td>{$client->kind}</td>
+					<td>{if $client->wildcard}<span class="badge badge-active">wildcard</span>{else}&mdash;{/if}</td>
+					<td class="whitelist-tags">
+						{foreach $entries as $entry}
+							{if $iterator->index < 3}<span class="tag">{$entry}</span>{/if}
+						{/foreach}
+						{if count($entries) > 3}<span class="tag">+{count($entries) - 3}</span>{/if}
+						{if count($entries) === 0}<span class="muted">vacía</span>{/if}
+					</td>
+					<td>{$client->rateLimit->maxRequests}/{$client->rateLimit->windowSeconds}s</td>
+					<td>{$client->configVersion}</td>
+					<td>
+						/pv/ {if $client->preview->enabled}on{else}off{/if}
+						&middot; /mt/ {if $client->preview->metaEnabled}on{else}off{/if}
+					</td>
+					<td class="actions">
+						<a href="{plink detail, id => $client->internalId}" class="btn btn-sm">Abrir</a>
+					</td>
+				</tr>
+			{else}
+				<tr>
+					<td colspan="8">No hay clientes todavía.</td>
+				</tr>
 			{/foreach}
 		</tbody>
 	</table>
 </div>
 
-{if $total > 20}
+{if $total > $limit}
 <div class="pagination">
-	{if $page > 1}
-		<a href="{plink list, page => $page - 1}" class="btn btn-sm">&laquo; Anterior</a>
+	{if $skip > 0}
+		<a href="{plink list, skip => max(0, $skip - $limit)}" class="btn btn-sm">&laquo; Anterior</a>
 	{/if}
-	<span class="page-info">Página {$page} de {ceil($total / 20)}</span>
-	{if $page < ceil($total / 20)}
-		<a href="{plink list, page => $page + 1}" class="btn btn-sm">Siguiente &raquo;</a>
+	<span class="page-info">
+		{$skip + 1}&ndash;{min($total, $skip + $limit)} de {$total}
+	</span>
+	{if $skip + $limit < $total}
+		<a href="{plink list, skip => $skip + $limit}" class="btn btn-sm">Siguiente &raquo;</a>
 	{/if}
 </div>
 {/if}

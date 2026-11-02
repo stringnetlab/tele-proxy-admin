@@ -4,6 +4,8 @@ namespace App\ClientManagement\Application;
 
 use App\ClientManagement\Domain\Client;
 use App\ClientManagement\Domain\ClientRepository;
+use RuntimeException;
+use Throwable;
 
 
 final class CloneClientHandler
@@ -13,17 +15,29 @@ final class CloneClientHandler
 	) {}
 
 
-	public function handle(string $cryptId, string $newName): Client
+	/**
+	 * @return array{token: string, client: Client}
+	 */
+	public function handle(string $internalId): array
 	{
-		$source = $this->clientRepository->get($cryptId);
+		$source = $this->clientRepository->get($internalId);
 		if ($source === null) {
-			throw new \RuntimeException("Client $cryptId not found");
+			throw new RuntimeException('El cliente que intentas clonar no existe.');
 		}
 
-		$data = $source->toArray();
-		$data['name'] = $newName;
-		unset($data['crypt_id'], $data['created_at'], $data['updated_at'], $data['config_version']);
+		$created = $this->clientRepository->create($source->wildcard);
 
-		return $this->clientRepository->create($data);
+		try {
+			$this->clientRepository->update($created['client']->internalId, $source->toUpdatePayload());
+		} catch (Throwable $e) {
+			try {
+				$this->clientRepository->delete($created['client']->internalId);
+			} catch (Throwable) {
+			}
+
+			throw $e;
+		}
+
+		return $created;
 	}
 }

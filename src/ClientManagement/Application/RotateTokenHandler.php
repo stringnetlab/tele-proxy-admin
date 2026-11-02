@@ -16,8 +16,8 @@ final class RotateTokenHandler
 	/**
 	 * @return array{token: string, client: Client}
 	 */
-	public function handle(string $cryptId): array
+	public function handle(string $internalId): array
 	{
-		return $this->clientRepository->rotateToken($cryptId);
+		return $this->clientRepository->rotateToken($internalId);
 	}
 }

@@ -1,0 +1,82 @@
+{block content}
+<div class="page-header">
+	<h2>{$reason}</h2>
+</div>
+
+{if count($entries) > 0}
+	<div class="detail-card token-card">
+		<p class="flash flash-warning">
+			{if count($entries) === 1}
+				Este token se muestra una sola vez. Cópialo o guárdalo ahora; si lo pierdes tendrás que rotarlo.
+			{else}
+				Estos tokens se muestran una sola vez. Cópialos o guárdalos ahora; si los pierdes tendrás que rotarlos.
+			{/if}
+		</p>
+
+		{foreach $entries as $entry}
+			<div class="token-entry">
+				{if $entry['crypt_id'] !== ''}
+					<p class="muted">Cliente: <code>{$entry['crypt_id']}</code></p>
+				{/if}
+
+				<pre class="token-value"><code id="token-value-{$iterator->index}">{$entry['token']}</code></pre>
+
+				<div class="form-actions">
+					<button type="button" class="btn btn-primary" data-copy-target="token-value-{$iterator->index}">Copiar token</button>
+				</div>
+			</div>
+		{/foreach}
+
+		<div class="form-group">
+			<label for="token-confirm">
+				<input type="checkbox" id="token-confirm">
+				{if count($entries) === 1}
+					Confirmo que copié o guardé el token
+				{else}
+					Confirmo que copié o guardé todos los tokens
+				{/if}
+			</label>
+		</div>
+
+		<a id="token-continue" href="{plink list}" class="btn btn-secondary disabled" aria-disabled="true">Continuar a la lista</a>
+	</div>
+{/if}
+
+{if count($results) > 0}
+	<div class="detail-card">
+		<h3>Resultado</h3>
+		<div class="table-container">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>crypt_id</th>
+						<th>Estado</th>
+						<th>Detalle</th>
+					</tr>
+				</thead>
+				<tbody>
+					{foreach $results as $result}
+						<tr>
+							<td>{if $result['crypt_id'] !== ''}<code>{$result['crypt_id']}</code>{else}&mdash;{/if}</td>
+							<td>
+								{if $result['status'] === 'created'}
+									<span class="badge badge-active">creado</span>
+								{else}
+									<span class="badge badge-inactive">fallido</span>
+								{/if}
+							</td>
+							<td>{if $result['message'] !== ''}{$result['message']}{else}&mdash;{/if}</td>
+						</tr>
+					{/foreach}
+				</tbody>
+			</table>
+		</div>
+
+		{if count($entries) === 0}
+			<div class="form-actions">
+				<a href="{plink list}" class="btn btn-secondary">Volver a la lista</a>
+			</div>
+		{/if}
+	</div>
+{/if}
+{/block}

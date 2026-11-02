@@ -2,6 +2,7 @@
 
 namespace App\ClientManagement\Application;
 
+use App\ClientManagement\Domain\Client;
 use App\ClientManagement\Domain\ClientRepository;
 
 
@@ -13,10 +14,10 @@ final class ListClientsHandler
 
 
 	/**
-	 * @return array{clients: list<array<string, mixed>>, total: int}
+	 * @return array{clients: list<Client>, total: int}
 	 */
-	public function handle(int $page = 1, int $perPage = 20): array
+	public function handle(int $skip = 0, int $limit = 50): array
 	{
-		return $this->clientRepository->list($page, $perPage);
+		return $this->clientRepository->list($limit, $skip);
 	}
 }

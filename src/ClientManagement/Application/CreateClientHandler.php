@@ -13,8 +13,11 @@ final class CreateClientHandler
 	) {}
 
 
-	public function handle(array $data): Client
+	/**
+	 * @return array{token: string, client: Client}
+	 */
+	public function handle(bool $wildcard): array
 	{
-		return $this->clientRepository->create($data);
+		return $this->clientRepository->create($wildcard);
 	}
 }

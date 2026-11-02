@@ -5,75 +5,220 @@ namespace App\ClientManagement\Domain\ValueObjects;
 use InvalidArgumentException;
 
 
+/**
+ * Entradas `host` o `host:puerto`. Sin comodines, sin esquema, sin rutas; IPs públicas.
+ */
 final class Whitelist
 {
 	private const MAX_ENTRIES = 100;
-	private const DOMAIN_PATTERN = '/^(\*\.)?([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/';
+
+	private const MAX_HOST_BYTES = 253;
+
+	private const MAX_LABEL_BYTES = 63;
 
 
-	/** @var string[] */
-	private readonly array $domains;
-
-
-	/**
-	 * @param string[] $domains
-	 */
-	public function __construct(array $domains)
-	{
-		$this->validate($domains);
-		$this->domains = array_values(array_unique($domains));
-	}
+	/** @var list<string> */
+	private readonly array $entries;
 
 
 	/**
-	 * @param string[] $domains
+	 * @param list<string> $entries
 	 */
-	private function validate(array $domains): void
+	public function __construct(array $entries)
 	{
-		if (count($domains) > self::MAX_ENTRIES) {
-			throw new InvalidArgumentException(
-				'La whitelist no puede tener mas de ' . self::MAX_ENTRIES . ' entradas',
-			);
-		}
+		$normalized = [];
 
-		foreach ($domains as $domain) {
-			$domain = trim($domain);
-			if ($domain === '') {
+		foreach ($entries as $entry) {
+			$entry = trim($entry);
+			if ($entry === '') {
 				continue;
 			}
 
-			if (!preg_match(self::DOMAIN_PATTERN, $domain)) {
+			self::assertValid($entry);
+			$normalized[] = $entry;
+		}
+
+		$normalized = array_values(array_unique($normalized));
+		if (count($normalized) > self::MAX_ENTRIES) {
+			throw new InvalidArgumentException(
+				'La whitelist no puede tener más de ' . self::MAX_ENTRIES . ' entradas.',
+			);
+		}
+
+		$this->entries = $normalized;
+	}
+
+
+	public static function fromLines(string $text): self
+	{
+		return new self(preg_split('/\R/', $text) ?: []);
+	}
+
+
+	public static function fromApiResponse(mixed $data): self
+	{
+		if (!is_array($data)) {
+			return new self([]);
+		}
+
+		$entries = [];
+		foreach ($data as $entry) {
+			if (is_string($entry)) {
+				$entries[] = $entry;
+			}
+		}
+
+		return new self($entries);
+	}
+
+
+	/**
+	 * @return list<string>
+	 */
+	public function entries(): array
+	{
+		return $this->entries;
+	}
+
+
+	public function toText(): string
+	{
+		return implode("\n", $this->entries);
+	}
+
+
+	private static function assertValid(string $entry): void
+	{
+		[$host] = self::split($entry);
+
+		if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+			if (!self::isPublicIp($host)) {
 				throw new InvalidArgumentException(
-					"Dominio invalido en whitelist: '$domain'. Solo se permiten dominios o wildcards de dominios (*.ejemplo.com)",
+					"La entrada '$entry' apunta a una dirección privada o reservada.",
 				);
 			}
 
-			if (filter_var($domain, FILTER_VALIDATE_IP)) {
-				throw new InvalidArgumentException(
-					"Dominio invalido en whitelist: '$domain'. No se permiten direcciones IP",
-				);
-			}
+			return;
+		}
+
+		if (!self::isValidHostname($host)) {
+			throw new InvalidArgumentException(
+				"La entrada '$entry' no es un dominio válido ni un host:puerto.",
+			);
 		}
 	}
 
 
 	/**
-	 * @return string[]
+	 * @return array{string, int|null}
 	 */
-	public function getDomains(): array
+	private static function split(string $entry): array
 	{
-		return $this->domains;
+		if (str_starts_with($entry, '[')) {
+			$close = strpos($entry, ']');
+			if ($close === false) {
+				throw new InvalidArgumentException("La entrada '$entry' tiene corchetes desbalanceados.");
+			}
+
+			$host = substr($entry, 1, $close - 1);
+			$tail = substr($entry, $close + 1);
+			if ($host === '') {
+				throw new InvalidArgumentException("La entrada '$entry' no tiene host.");
+			}
+
+			if ($tail === '') {
+				return [$host, null];
+			}
+
+			if (!str_starts_with($tail, ':')) {
+				throw new InvalidArgumentException("La entrada '$entry' no es un host:puerto válido.");
+			}
+
+			return [$host, self::parsePort($entry, substr($tail, 1))];
+		}
+
+		$colons = substr_count($entry, ':');
+
+		if ($colons === 0) {
+			return [$entry, null];
+		}
+
+		if ($colons === 1) {
+			[$host, $port] = explode(':', $entry, 2);
+			if ($host === '') {
+				throw new InvalidArgumentException("La entrada '$entry' no tiene host.");
+			}
+
+			return [$host, self::parsePort($entry, $port)];
+		}
+
+		throw new InvalidArgumentException(
+			"La entrada '$entry' tiene un IPv6 ambiguo; usa corchetes: [ipv6]:puerto.",
+		);
 	}
 
 
-	public function count(): int
+	private static function parsePort(string $entry, string $raw): int
 	{
-		return count($this->domains);
+		if (!ctype_digit($raw)) {
+			throw new InvalidArgumentException("La entrada '$entry' tiene un puerto inválido.");
+		}
+
+		$port = (int) $raw;
+		if ($port < 1 || $port > 65535) {
+			throw new InvalidArgumentException("La entrada '$entry' tiene un puerto fuera de 1..65535.");
+		}
+
+		return $port;
 	}
 
 
-	public function isEmpty(): bool
+	private static function isPublicIp(string $ip): bool
 	{
-		return count($this->domains) === 0;
+		return filter_var(
+			$ip,
+			FILTER_VALIDATE_IP,
+			FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+		) !== false;
+	}
+
+
+	private static function isValidHostname(string $host): bool
+	{
+		if ($host === '' || strlen($host) > self::MAX_HOST_BYTES) {
+			return false;
+		}
+
+		$dot = strrpos($host, '.');
+		if ($dot === false) {
+			return false;
+		}
+
+		$prefix = substr($host, 0, $dot);
+		$tld = substr($host, $dot + 1);
+
+		if ($tld === '' || strlen($tld) > self::MAX_LABEL_BYTES) {
+			return false;
+		}
+
+		if (!ctype_alpha($tld)) {
+			return false;
+		}
+
+		foreach (explode('.', $prefix) as $label) {
+			if ($label === '' || strlen($label) > self::MAX_LABEL_BYTES) {
+				return false;
+			}
+
+			if (str_starts_with($label, '-') || str_ends_with($label, '-')) {
+				return false;
+			}
+
+			if (!preg_match('/^[A-Za-z0-9-]+$/', $label)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

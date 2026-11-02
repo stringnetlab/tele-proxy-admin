@@ -12,8 +12,8 @@ final class DeleteClientHandler
 	) {}
 
 
-	public function handle(string $cryptId): void
+	public function handle(string $internalId): void
 	{
-		$this->clientRepository->delete($cryptId);
+		$this->clientRepository->delete($internalId);
 	}
 }

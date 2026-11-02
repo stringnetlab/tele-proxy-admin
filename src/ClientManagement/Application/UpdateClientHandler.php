@@ -2,7 +2,6 @@
 
 namespace App\ClientManagement\Application;
 
-use App\ClientManagement\Domain\Client;
 use App\ClientManagement\Domain\ClientRepository;
 
 
@@ -13,8 +12,11 @@ final class UpdateClientHandler
 	) {}
 
 
-	public function handle(string $cryptId, array $data, ?int $expectedVersion = null): Client
+	/**
+	 * @param array<string, mixed> $payload
+	 */
+	public function handle(string $internalId, array $payload): int
 	{
-		return $this->clientRepository->update($cryptId, $data, $expectedVersion);
+		return $this->clientRepository->update($internalId, $payload);
 	}
 }
