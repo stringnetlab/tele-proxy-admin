@@ -2,7 +2,9 @@
 
 namespace App\Authentication\Infrastructure;
 
+use App\Authentication\Domain\GoogleCallbackResult;
 use App\Shared\Infrastructure\ApiClient;
+use App\Shared\Infrastructure\ApiError;
 
 
 class ApiAuthAdapter
@@ -14,55 +16,97 @@ class ApiAuthAdapter
 	}
 
 
-	/**
-	 * @return array{url: string}|null
-	 */
-	public function getGoogleAuthUrl(): ?array
+	public function getGoogleAuthUrl(): string
 	{
-		$response = $this->apiClient->get('/api/v1/admin/auth/google/url');
+		$data = $this->apiClient->json('GET', '/api/v1/admin/auth/google/url');
+		$url = $data['url'] ?? null;
 
-		if ($response->getStatusCode() !== 200) {
-			return null;
+		if (!is_string($url) || $url === '') {
+			throw new ApiError(502, 'invalid_response', 'El servicio de administración no devolvió una URL de login válida.');
 		}
 
-		return json_decode((string) $response->getBody(), true);
+		return $url;
+	}
+
+
+	public function exchangeGoogleCallback(string $code, string $state): GoogleCallbackResult
+	{
+		$response = $this->apiClient->get('/api/v1/admin/auth/google/callback', [
+			'query' => [
+				'code' => $code,
+				'state' => $state,
+			],
+			'allow_redirects' => false,
+		]);
+
+		$cookie = null;
+		$maxAge = null;
+
+		foreach ($response->getHeader('Set-Cookie') as $line) {
+			if ($cookie === null && preg_match('/\bteleproxy_admin=([^;]*)/', $line, $match) === 1) {
+				$cookie = $match[1];
+			}
+
+			if ($maxAge === null && preg_match('/\bMax-Age=(\d+)/i', $line, $match) === 1) {
+				$maxAge = (int) $match[1];
+			}
+		}
+
+		if ($response->getStatusCode() === 302 && is_string($cookie) && $cookie !== '') {
+			return new GoogleCallbackResult(302, $cookie, $maxAge);
+		}
+
+		$decoded = json_decode((string) $response->getBody(), true);
+		$errorCode = is_array($decoded) && isset($decoded['error']) && is_string($decoded['error'])
+			? $decoded['error']
+			: 'api_error';
+
+		return new GoogleCallbackResult(
+			status: $response->getStatusCode(),
+			sessionCookie: null,
+			maxAgeSeconds: null,
+			errorCode: $errorCode,
+			retryAfter: $this->retryAfter($response->getHeaderLine('Retry-After')),
+		);
 	}
 
 
 	/**
-	 * @return array{email: string, role: string, via: string}|null
+	 * @return array<string, mixed>
 	 */
-	public function getMe(): ?array
+	public function getMe(string $sessionCookie): array
 	{
-		$response = $this->apiClient->get('/api/v1/admin/me');
-
-		if ($response->getStatusCode() !== 200) {
-			return null;
-		}
-
-		return json_decode((string) $response->getBody(), true);
+		return $this->apiClient
+			->withSessionCookie($sessionCookie)
+			->json('GET', '/api/v1/admin/me');
 	}
 
 
-	/**
-	 * @return array{email: string, role: string, via: string}|null
-	 */
-	public function verifyMasterToken(string $token): ?array
+	public function logout(string $sessionCookie): void
 	{
-		$client = $this->apiClient->withMasterToken($token);
-		$response = $client->get('/api/v1/admin/me');
+		$response = $this->apiClient
+			->withSessionCookie($sessionCookie)
+			->post('/api/v1/admin/auth/logout');
 
-		if ($response->getStatusCode() !== 200) {
-			return null;
+		if ($response->getStatusCode() >= 400 && $response->getStatusCode() !== 401) {
+			throw ApiError::fromResponse($response);
 		}
-
-		return json_decode((string) $response->getBody(), true);
 	}
 
 
-	public function logout(): bool
+	private function retryAfter(string $header): ?int
 	{
-		$response = $this->apiClient->post('/api/v1/admin/auth/logout');
-		return $response->getStatusCode() === 200;
+		$header = trim($header);
+		if ($header === '') {
+			return null;
+		}
+
+		if (ctype_digit($header)) {
+			return (int) $header;
+		}
+
+		$timestamp = strtotime($header);
+
+		return $timestamp === false ? null : max(0, $timestamp - time());
 	}
 }

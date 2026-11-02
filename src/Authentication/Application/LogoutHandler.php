@@ -4,7 +4,6 @@ namespace App\Authentication\Application;
 
 use App\Authentication\Infrastructure\ApiAuthAdapter;
 use App\Authentication\Infrastructure\CouchDbSessionRepository;
-use App\Authentication\Infrastructure\ValkeySingleSessionStore;
 
 
 final class LogoutHandler
@@ -12,14 +11,22 @@ final class LogoutHandler
 	public function __construct(
 		private readonly ApiAuthAdapter $authAdapter,
 		private readonly CouchDbSessionRepository $sessionRepository,
-		private readonly ValkeySingleSessionStore $singleSessionStore,
+		private readonly EnforceSingleSessionHandler $singleSession,
 	) {}
 
 
-	public function handle(string $email, string $sessionId): void
+	public function handle(string $email, string $netteSessionId, ?string $apiCookie): void
 	{
-		$this->singleSessionStore->invalidateSession($email);
-		$this->sessionRepository->delete($sessionId);
-		$this->authAdapter->logout();
+		if ($apiCookie !== null && $apiCookie !== '') {
+			try {
+				$this->authAdapter->logout($apiCookie);
+			} catch (\Throwable) {
+				// El logout del API es best-effort: la sesión local se cierra igualmente.
+			}
+		}
+
+		$this->singleSession->invalidate($email);
+		$this->sessionRepository->deleteSession($netteSessionId);
+		$this->sessionRepository->logAuditEvent('admin_ui_logout', $email);
 	}
 }

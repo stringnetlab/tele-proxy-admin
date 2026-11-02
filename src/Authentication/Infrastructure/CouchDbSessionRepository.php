@@ -2,51 +2,55 @@
 
 namespace App\Authentication\Infrastructure;
 
+use App\Authentication\Domain\Session;
 use App\Shared\Infrastructure\CouchDbConnection;
 
 
-class CouchDbSessionRepository
+final class CouchDbSessionRepository
 {
 	public function __construct(
 		private readonly CouchDbConnection $connection,
-	)
+	) {}
+
+
+	public function saveSession(Session $session): bool
 	{
-	}
-
-
-	public function saveSession(string $sessionId, string $email, string $role, string $ip, string $userAgent): bool
-	{
-		return $this->connection->put('session_' . $sessionId, [
-			'type' => 'session',
-			'session_id' => $sessionId,
-			'email' => $email,
-			'role' => $role,
-			'ip' => $ip,
-			'user_agent' => $userAgent,
-			'created_at' => gmdate('c'),
-		]);
-	}
-
-
-	public function getSession(string $sessionId): ?array
-	{
-		return $this->connection->get('session_' . $sessionId);
-	}
-
-
-	public function deleteSession(string $sessionId): bool
-	{
-		$doc = $this->getSession($sessionId);
-		if ($doc === null) {
+		try {
+			return $this->connection->put('session_' . $session->netteSessionId, array_merge(
+				$session->toArray(),
+				[
+					'type' => 'session',
+					'created_at' => gmdate('c'),
+				],
+			));
+		} catch (\Throwable) {
 			return false;
 		}
-
-		return $this->connection->delete('session_' . $sessionId, $doc['_rev'] ?? '');
 	}
 
 
-	public function logAuditEvent(string $event, string $email, array $data = []): bool
+	public function deleteSession(string $netteSessionId): void
 	{
-		return $this->connection->logEvent($event, $email, $data);
+		try {
+			$docId = 'session_' . $netteSessionId;
+			$doc = $this->connection->get($docId);
+			if ($doc !== null) {
+				$this->connection->delete($docId, (string) ($doc['_rev'] ?? ''));
+			}
+		} catch (\Throwable) {
+			// La eliminación de metadatos es best-effort: la sesión ya fue invalidada en Valkey.
+		}
+	}
+
+
+	/**
+	 * @param array<string, mixed> $data
+	 */
+	public function logAuditEvent(string $event, string $email, array $data = []): void
+	{
+		try {
+			$this->connection->logEvent($event, $email, $data);
+		} catch (\Throwable) {
+		}
 	}
 }

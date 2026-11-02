@@ -5,55 +5,32 @@ namespace App\Authentication\Infrastructure;
 use App\Shared\Infrastructure\ValkeyConnection;
 
 
-class ValkeySingleSessionStore
+final class ValkeySingleSessionStore
 {
-	private const SESSION_TTL = 900;
+	private const KEY_PREFIX = 'admin_ui_session:';
 
 
 	public function __construct(
 		private readonly ValkeyConnection $valkey,
-	)
+	) {}
+
+
+	public function storeSession(string $email, string $netteSessionId, int $expiresAt): void
 	{
+		$ttl = max(1, $expiresAt - time());
+		$this->valkey->set(self::KEY_PREFIX . $email, $netteSessionId, $ttl);
 	}
 
 
-	public function storeSession(string $email, string $sessionId, string $ip, string $userAgent): void
+	public function isValidSession(string $email, string $netteSessionId): bool
 	{
-		$data = json_encode([
-			'session_id' => $sessionId,
-			'ip' => $ip,
-			'user_agent' => $userAgent,
-			'created_at' => gmdate('c'),
-		]);
-
-		$this->valkey->set('session:' . $email, $data, self::SESSION_TTL);
-	}
-
-
-	public function getSession(string $email): ?array
-	{
-		$data = $this->valkey->get('session:' . $email);
-		if ($data === null) {
-			return null;
-		}
-
-		return json_decode($data, true);
+		$current = $this->valkey->get(self::KEY_PREFIX . $email);
+		return $current !== null && hash_equals($current, $netteSessionId);
 	}
 
 
 	public function invalidateSession(string $email): void
 	{
-		$this->valkey->del('session:' . $email);
-	}
-
-
-	public function isValidSession(string $email, string $sessionId): bool
-	{
-		$session = $this->getSession($email);
-		if ($session === null) {
-			return false;
-		}
-
-		return ($session['session_id'] ?? '') === $sessionId;
+		$this->valkey->del(self::KEY_PREFIX . $email);
 	}
 }

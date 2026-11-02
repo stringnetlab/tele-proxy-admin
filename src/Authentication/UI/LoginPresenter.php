@@ -2,22 +2,31 @@
 
 namespace App\Authentication\UI;
 
+use App\Authentication\Application\LoginRateLimiter;
 use App\Authentication\Application\LoginWithGoogleHandler;
-use App\Authentication\Application\LoginWithMasterTokenHandler;
-use App\Authentication\Application\LogoutHandler;
+use App\Authentication\Domain\AuthenticationFailedException;
 use App\Authentication\Infrastructure\ApiAuthAdapter;
+use App\Shared\Infrastructure\ApiError;
+use App\Shared\Infrastructure\ClientIpResolver;
+use App\Shared\Infrastructure\RateLimitExceededException;
 use App\Shared\UI\BasePresenter;
-use Nette\Application\UI\Form;
+use Nette\Application\BadRequestException;
 
 
 final class LoginPresenter extends BasePresenter
 {
 	public function __construct(
 		private readonly LoginWithGoogleHandler $googleHandler,
-		private readonly LoginWithMasterTokenHandler $masterTokenHandler,
-		private readonly LogoutHandler $logoutHandler,
-		private readonly ApiAuthAdapter $authAdapter,
+		private readonly LoginRateLimiter $loginRateLimiter,
+		private readonly ApiAuthAdapter $apiAuthAdapter,
+		private readonly ClientIpResolver $clientIpResolver,
 	) {}
+
+
+	protected function requiresAuth(): bool
+	{
+		return false;
+	}
 
 
 	public function actionDefault(): void
@@ -31,60 +40,60 @@ final class LoginPresenter extends BasePresenter
 	public function actionGoogleUrl(): void
 	{
 		try {
-			$url = $this->authAdapter->getGoogleAuthUrl();
-			$this->redirectUrl($url);
-		} catch (\Throwable) {
-			$this->flashMessage('Google OAuth no está disponible', 'danger');
+			$this->loginRateLimiter->assertAllowed($this->getHttpRequest(), 'google_url');
+			$url = $this->apiAuthAdapter->getGoogleAuthUrl();
+		} catch (RateLimitExceededException|ApiError $e) {
+			$this->flashMessage($e->getMessage(), 'danger');
 			$this->redirect('default');
 		}
+
+		$this->redirectUrl($url);
 	}
 
 
-	public function actionGoogleCallback(string $code): void
+	public function actionGoogleCallback(
+		string $code = '',
+		string $state = '',
+		?string $error = null,
+	): void
 	{
-		$ip = $this->getHttpRequest()->getRemoteAddress() ?? 'unknown';
-		$ua = $this->getHttpRequest()->getHeader('User-Agent') ?? 'unknown';
-		$session = $this->googleHandler->handleCallback($code, $ip, $ua);
-
-		if ($session === null) {
-			$this->flashMessage('Autenticación fallida', 'danger');
+		if ($error !== null) {
+			$this->flashMessage('Cancelaste el inicio de sesión con Google.', 'danger');
 			$this->redirect('default');
 		}
 
-		$this->setAdminSession($session->sessionId, $session->email, $session->role);
+		if ($code === '' || $state === '') {
+			$this->flashMessage('La respuesta de Google llegó incompleta. Inténtalo de nuevo.', 'danger');
+			$this->redirect('default');
+		}
+
+		$request = $this->getHttpRequest();
+
+		try {
+			$this->loginRateLimiter->assertAllowed($request, 'callback');
+			$session = $this->googleHandler->handle(
+				$code,
+				$state,
+				$this->clientIpResolver->resolve($request),
+				$request->getHeader('User-Agent') ?? '',
+			);
+		} catch (RateLimitExceededException|AuthenticationFailedException|ApiError $e) {
+			$this->flashMessage($e->getMessage(), 'danger');
+			$this->redirect('default');
+		}
+
+		$this->setAdminSession($session);
 		$this->redirect(':ClientManagement:Client:list');
 	}
 
 
 	public function actionLogout(): void
 	{
-		if ($this->isAdmin()) {
-			$this->logoutHandler->handle($this->getAdminEmail(), $this->getSessionId());
+		if (!$this->getHttpRequest()->isMethod('POST')) {
+			throw new BadRequestException('Método no permitido.', 405);
 		}
-		$this->clearAdminSession();
+
+		$this->performLogout();
 		$this->redirect('default');
-	}
-
-
-	protected function createComponentMasterTokenForm(): Form
-	{
-		$form = new Form;
-		$form->addPassword('token', 'Master Token')
-			->setRequired('Ingresa el master token');
-		$form->addSubmit('login', 'Iniciar sesión');
-		$form->onSuccess[] = function (Form $form, \stdClass $values): void {
-			$ip = $this->getHttpRequest()->getRemoteAddress() ?? 'unknown';
-			$ua = $this->getHttpRequest()->getHeader('User-Agent') ?? 'unknown';
-			$session = $this->masterTokenHandler->handle($values->token, $ip, $ua);
-
-			if ($session === null) {
-				$this->flashMessage('Master token inválido', 'danger');
-				return;
-			}
-
-			$this->setAdminSession($session->sessionId, $session->email, $session->role);
-			$this->redirect(':Client:list');
-		};
-		return $form;
 	}
 }

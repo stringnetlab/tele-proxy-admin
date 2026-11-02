@@ -2,10 +2,12 @@
 
 namespace App\Authentication\Application;
 
+use App\Authentication\Domain\AuthenticationFailedException;
+use App\Authentication\Domain\GoogleCallbackResult;
 use App\Authentication\Domain\Session;
 use App\Authentication\Infrastructure\ApiAuthAdapter;
 use App\Authentication\Infrastructure\CouchDbSessionRepository;
-use App\Authentication\Infrastructure\ValkeySingleSessionStore;
+use Nette\Http\Session as NetteSession;
 
 
 final class LoginWithGoogleHandler
@@ -13,30 +15,73 @@ final class LoginWithGoogleHandler
 	public function __construct(
 		private readonly ApiAuthAdapter $authAdapter,
 		private readonly CouchDbSessionRepository $sessionRepository,
-		private readonly ValkeySingleSessionStore $singleSessionStore,
+		private readonly EnforceSingleSessionHandler $singleSession,
+		private readonly NetteSession $netteSession,
 	) {}
 
 
-	public function handleCallback(string $code, string $ip, string $userAgent): ?Session
+	public function handle(string $code, string $state, string $ip, string $userAgent): Session
 	{
-		$me = $this->authAdapter->getMe($code);
-		if ($me === null) {
-			return null;
+		$callback = $this->authAdapter->exchangeGoogleCallback($code, $state);
+		if (!$callback->isSuccess()) {
+			throw AuthenticationFailedException::fromCallback($callback);
 		}
 
+		$me = $this->authAdapter->getMe((string) $callback->sessionCookie);
+		$this->assertAdminRole($me);
+
+		$this->netteSession->start();
+		$this->netteSession->regenerateId();
+
 		$session = new Session(
-			sessionId: bin2hex(random_bytes(16)),
-			email: $me['email'],
-			role: $me['role'] ?? 'admin',
+			netteSessionId: $this->netteSession->getId(),
+			email: self::stringField($me, 'email'),
+			role: self::stringField($me, 'role'),
+			apiCookie: (string) $callback->sessionCookie,
+			expiresAt: $callback->expiresAt(),
 			ip: $ip,
 			userAgent: $userAgent,
-			createdAt: time(),
 		);
 
-		$this->singleSessionStore->invalidateSession($session->email);
-		$this->singleSessionStore->storeSession($session);
-		$this->sessionRepository->save($session, 'google_login');
+		$this->singleSession->register($session->email, $session->netteSessionId, $session->expiresAt);
+		$this->sessionRepository->saveSession($session);
+		$this->sessionRepository->logAuditEvent('admin_ui_login', $session->email, [
+			'ip' => $session->ip,
+			'provider' => 'google',
+		]);
 
 		return $session;
+	}
+
+
+	/**
+	 * @param array<string, mixed> $me
+	 */
+	private function assertAdminRole(array $me): void
+	{
+		$role = $me['role'] ?? null;
+		if (!is_string($role) || $role !== 'admin') {
+			throw new AuthenticationFailedException(
+				403,
+				'Tu cuenta no tiene permisos de administrador.',
+			);
+		}
+	}
+
+
+	/**
+	 * @param array<string, mixed> $data
+	 */
+	private static function stringField(array $data, string $key): string
+	{
+		$value = $data[$key] ?? null;
+		if (!is_string($value) || $value === '') {
+			throw new AuthenticationFailedException(
+				502,
+				'El API devolvió una identidad incompleta.',
+			);
+		}
+
+		return $value;
 	}
 }

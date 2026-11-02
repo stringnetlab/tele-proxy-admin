@@ -12,8 +12,21 @@ final class EnforceSingleSessionHandler
 	) {}
 
 
-	public function isValid(string $email, string $sessionId): bool
+	public function register(string $email, string $netteSessionId, int $expiresAt): void
 	{
-		return $this->singleSessionStore->isValidSession($email, $sessionId);
+		$this->singleSessionStore->invalidateSession($email);
+		$this->singleSessionStore->storeSession($email, $netteSessionId, $expiresAt);
+	}
+
+
+	public function isValid(string $email, string $netteSessionId): bool
+	{
+		return $this->singleSessionStore->isValidSession($email, $netteSessionId);
+	}
+
+
+	public function invalidate(string $email): void
+	{
+		$this->singleSessionStore->invalidateSession($email);
 	}
 }
