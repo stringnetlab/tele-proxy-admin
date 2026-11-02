@@ -3,6 +3,7 @@
 namespace App\AdminManagement\Application;
 
 use App\AdminManagement\Domain\AdminRepository;
+use App\AdminManagement\Domain\AdminUser;
 
 
 final class ToggleAdminHandler
@@ -12,8 +13,8 @@ final class ToggleAdminHandler
 	) {}
 
 
-	public function handle(string $email): void
+	public function handle(string $email, bool $active): AdminUser
 	{
-		$this->adminRepository->toggle($email);
+		return $this->adminRepository->setActive($email, $active);
 	}
 }

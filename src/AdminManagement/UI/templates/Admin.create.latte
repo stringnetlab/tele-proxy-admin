@@ -4,24 +4,23 @@
 </div>
 
 <div class="form-container">
-	<form n:name="adminForm">
-		<div class="form-group">
-			<label n:name="email">Email</label>
-			<input n:name="email" class="form-control" type="email">
-		</div>
+	{form adminForm}
+		<p class="muted">
+			El dominio del email debe estar entre los permitidos por el servidor.
+			El administrador se crea activo y con rol <code>admin</code>.
+		</p>
 
 		<div class="form-group">
-			<label n:name="role">Rol</label>
-			<select n:name="role" class="form-control">
-				<option value="admin">Admin</option>
-				<option value="master">Master</option>
-			</select>
+			{label email}Email{/label}
+			{input email}
 		</div>
+
+		{input errors}
 
 		<div class="form-actions">
-			<button type="submit" class="btn btn-primary">Crear administrador</button>
+			{input save class => 'btn btn-primary'}
 			<a href="{plink list}" class="btn btn-secondary">Cancelar</a>
 		</div>
-	</form>
+	{/form}
 </div>
 {/block}

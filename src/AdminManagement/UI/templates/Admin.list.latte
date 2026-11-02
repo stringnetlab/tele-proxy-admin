@@ -7,37 +7,42 @@
 </div>
 
 <div class="table-container">
-	<table id="admins-table" class="table">
+	<table class="table">
 		<thead>
 			<tr>
 				<th>Email</th>
 				<th>Rol</th>
 				<th>Estado</th>
 				<th>Creado</th>
+				<th>Creado por</th>
 				<th>Acciones</th>
 			</tr>
 		</thead>
 		<tbody>
 			{foreach $admins as $admin}
-			<tr>
-				<td>{$admin['email']}</td>
-				<td><span class="badge badge-{$admin['role']}">{$admin['role']}</span></td>
-				<td>
-					{if $admin['active']}
-						<span class="badge badge-active">Activo</span>
-					{else}
-						<span class="badge badge-inactive">Inactivo</span>
-					{/if}
-				</td>
-				<td>{$admin['created_at']|date:'Y-m-d H:i'}</td>
-				<td class="actions">
-					<a href="{plink detail, email => $admin['email']}" class="btn btn-sm">Ver</a>
-					<a href="{plink toggle, email => $admin['email']}" class="btn btn-sm">
-						{if $admin['active']}Desactivar{else}Activar{/if}
-					</a>
-					<a href="{plink delete, email => $admin['email']}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este administrador?')">Eliminar</a>
-				</td>
-			</tr>
+				<tr>
+					<td>
+						{$admin->email}
+						{if $admin->email === $currentEmail}<span class="badge badge-active">tú</span>{/if}
+					</td>
+					<td><span class="badge badge-{$admin->role}">{$admin->role}</span></td>
+					<td>
+						{if $admin->active}
+							<span class="badge badge-active">Activo</span>
+						{else}
+							<span class="badge badge-inactive">Inactivo</span>
+						{/if}
+					</td>
+					<td>{$admin->createdAt->format('Y-m-d H:i')}</td>
+					<td>{if $admin->createdBy !== ''}{$admin->createdBy}{else}&mdash;{/if}</td>
+					<td class="actions">
+						<a href="{plink detail, email => $admin->email}" class="btn btn-sm">Abrir</a>
+					</td>
+				</tr>
+			{else}
+				<tr>
+					<td colspan="6">No hay administradores.</td>
+				</tr>
 			{/foreach}
 		</tbody>
 	</table>

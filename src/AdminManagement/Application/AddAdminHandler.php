@@ -13,8 +13,8 @@ final class AddAdminHandler
 	) {}
 
 
-	public function handle(string $email, string $role): AdminUser
+	public function handle(string $email): AdminUser
 	{
-		return $this->adminRepository->add($email, $role);
+		return $this->adminRepository->add($email);
 	}
 }

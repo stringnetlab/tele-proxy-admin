@@ -2,6 +2,10 @@
 
 namespace App\AdminManagement\Domain;
 
+use DateTimeImmutable;
+use InvalidArgumentException;
+use Throwable;
+
 
 final class AdminUser
 {
@@ -9,11 +13,9 @@ final class AdminUser
 		public readonly string $email,
 		public readonly string $role,
 		public readonly bool $active,
-		public readonly \DateTimeImmutable $createdAt,
+		public readonly DateTimeImmutable $createdAt,
 		public readonly string $createdBy,
-	)
-	{
-	}
+	) {}
 
 
 	/**
@@ -21,12 +23,24 @@ final class AdminUser
 	 */
 	public static function fromApiResponse(array $data): self
 	{
+		$email = $data['email'] ?? null;
+		if (!is_string($email) || $email === '') {
+			throw new InvalidArgumentException('Falta el email del administrador.');
+		}
+
+		$createdAt = $data['created_at'] ?? '';
+		try {
+			$createdDate = new DateTimeImmutable(is_string($createdAt) && $createdAt !== '' ? $createdAt : 'now');
+		} catch (Throwable $e) {
+			throw new InvalidArgumentException('created_at no es una fecha válida.', 0, $e);
+		}
+
 		return new self(
-			email: $data['email'] ?? '',
-			role: $data['role'] ?? 'admin',
+			email: $email,
+			role: is_string($data['role'] ?? null) ? $data['role'] : 'admin',
 			active: (bool) ($data['active'] ?? true),
-			createdAt: new \DateTimeImmutable($data['created_at'] ?? 'now'),
-			createdBy: $data['created_by'] ?? '',
+			createdAt: $createdDate,
+			createdBy: is_string($data['created_by'] ?? null) ? $data['created_by'] : '',
 		);
 	}
 

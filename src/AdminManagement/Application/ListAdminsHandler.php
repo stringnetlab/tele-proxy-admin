@@ -3,6 +3,7 @@
 namespace App\AdminManagement\Application;
 
 use App\AdminManagement\Domain\AdminRepository;
+use App\AdminManagement\Domain\AdminUser;
 
 
 final class ListAdminsHandler
@@ -13,7 +14,7 @@ final class ListAdminsHandler
 
 
 	/**
-	 * @return list<array<string, mixed>>
+	 * @return list<AdminUser>
 	 */
 	public function handle(): array
 	{

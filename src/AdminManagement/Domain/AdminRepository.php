@@ -6,27 +6,18 @@ namespace App\AdminManagement\Domain;
 interface AdminRepository
 {
 	/**
-	 * @return array<int, array<string, mixed>>
+	 * @return list<AdminUser>
 	 */
 	public function list(): array;
 
 
-	/**
-	 * @return array<string, mixed>|null
-	 */
-	public function get(string $email): ?array;
+	public function get(string $email): ?AdminUser;
 
 
-	/**
-	 * @return array<string, mixed>
-	 */
-	public function add(string $email): array;
+	public function add(string $email): AdminUser;
 
 
-	/**
-	 * @return array<string, mixed>
-	 */
-	public function toggle(string $email, bool $active): array;
+	public function setActive(string $email, bool $active): AdminUser;
 
 
 	public function delete(string $email): void;

@@ -2,10 +2,7 @@
 <div class="page-header">
 	<h2>Administrador: {$admin->email}</h2>
 	<div class="actions">
-		<a href="{plink toggle, email => $admin->email}" class="btn btn-warning">
-			{if $admin->active}Desactivar{else}Activar{/if}
-		</a>
-		<a href="{plink delete, email => $admin->email}" class="btn btn-danger" onclick="return confirm('¿Eliminar este administrador?')">Eliminar</a>
+		<a href="{plink list}" class="btn btn-secondary">Volver</a>
 	</div>
 </div>
 
@@ -30,15 +27,28 @@
 	</div>
 	<div class="detail-row">
 		<label>Creado:</label>
-		<span>{$admin->createdAt|date:'Y-m-d H:i:s'}</span>
+		<span>{$admin->createdAt->format('Y-m-d H:i:s')}</span>
 	</div>
 	<div class="detail-row">
 		<label>Creado por:</label>
-		<span>{$admin->createdBy}</span>
+		<span>{if $admin->createdBy !== ''}{$admin->createdBy}{else}&mdash;{/if}</span>
 	</div>
 </div>
 
-<div class="back-link">
-	<a href="{plink list}">&laquo; Volver a la lista</a>
-</div>
+{if $admin->email !== $currentEmail}
+	<div class="detail-card actions-card">
+		<h3>Acciones</h3>
+		<p class="muted">Desactivar impide el login de esta cuenta. Eliminar es irreversible.</p>
+
+		{form actionsForm}
+			{input errors}
+			<div class="form-actions">
+				{input toggle}
+				{input delete}
+			</div>
+		{/form}
+	</div>
+{else}
+	<p class="muted">No puedes desactivar ni eliminar tu propia cuenta.</p>
+{/if}
 {/block}
