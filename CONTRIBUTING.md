@@ -56,7 +56,9 @@ Ver `docs/ENVIRONMENT.md`. Nunca commitear `.env` con valores reales.
 ## Seguridad
 
 - No commitear secretos (.env, claves, tokens)
-- Master token: NUNCA en localStorage (rumi.js gestiona IndexedDB cifrado)
+- Login exclusivamente por Google OAuth: sin contrasenas ni master token
+- La cookie de sesion del API nunca llega al navegador: se guarda cifrada (AES-256-GCM) en la sesion del panel
+- Los tokens de un solo uso viajan por un handle de Valkey consumido con GETDEL; nunca en sesion, flash, URL o logs
 - Validacion server-side obligatoria (Nette Forms)
 - Headers de seguridad gestionados por Caddy
 

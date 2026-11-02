@@ -63,7 +63,8 @@ Ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para detalles.
 src/
 ├── ClientManagement/     # CRUD de clientes del proxy
 ├── AdminManagement/      # Gestion de administradores
-├── Authentication/       # Login (Google + master token), sesion
+├── SettingsManagement/   # Ajustes globales (GET/PATCH)
+├── Authentication/       # Login con Google, sesion
 └── Shared/               # Infraestructura compartida (ApiClient, CouchDB, Valkey)
 ```
 

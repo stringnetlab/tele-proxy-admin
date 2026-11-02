@@ -19,8 +19,8 @@ El navegador habla SOLO con Nette, y Nette reenvía server-side al API de contro
 ┌─────────────┐   HTTP (HTML/AJAX)   ┌──────────────┐   HTTP (JSON)   ┌──────────┐
 │  Navegador  │ ◄──────────────────► │ Nette (BFF)  │ ◄─────────────► │  API     │
 │ (Chrome)    │  Cookie __Host-      │ + FrankenPHP │  X-Admin-UI: 1  │ tele-    │
-│ + Tabulator │  admin_ui            │ + Caddy      │  Cookie API     │ proxy    │
-│ + Notiflix  │                      │              │                 │          │
+│ HTML/CSS/JS │  admin_ui            │ + Caddy      │  Cookie API     │ proxy    │
+│ propios     │                      │              │                 │          │
 └─────────────┘                      └──────┬───────┘                 └──────────┘
                                             │
                                             ▼
@@ -83,15 +83,14 @@ src/
 │   └── UI/
 │       ├── AdminPresenter.php
 │       └── templates/
-├── Authentication/                # Slice: Login, sesión, master token
-│   ├── Domain/
-│   │   ├── Session.php
-│   │   └── OperatorSecret.php
-│   ├── Application/
-│   │   ├── LoginWithGoogle/
-│   │   ├── LoginWithMasterToken/
-│   │   ├── Logout/
-│   │   └── EnforceSingleSession/
+├── SettingsManagement/            # Slice: Ajustes globales
+│   ├── Domain/Settings.php        # + SettingsRepository
+│   ├── Application/               # GetSettings, UpdateSettings
+│   ├── Infrastructure/ApiSettingsRepository.php
+│   └── UI/SettingsPresenter.php   # + templates/
+├── Authentication/                # Slice: Login Google, sesión
+│   ├── Domain/Session.php
+│   ├── Application/               # LoginWithGoogle, Logout, EnforceSingleSession
 │   ├── Infrastructure/
 │   │   ├── CouchDbSessionRepository.php
 │   │   ├── ValkeySingleSessionStore.php
@@ -121,15 +120,14 @@ src/
 ### Headers (Caddy)
 
 ```
-Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Strict-Transport-Security: max-age=31536000; includeSubDomains
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
-Referrer-Policy: strict-origin-when-cross-origin
+Referrer-Policy: no-referrer
 Permissions-Policy: camera=(), microphone=(), geolocation=()
-Content-Security-Policy: default-src 'self'; script-src 'self';
-    style-src 'self' 'unsafe-inline'; img-src 'self' data:;
-    connect-src 'self'; frame-ancestors 'none'; base-uri 'self';
-    form-action 'self'; object-src 'none'; upgrade-insecure-requests
+Content-Security-Policy: default-src 'self'; base-uri 'none'; form-action 'self';
+    frame-ancestors 'none'; img-src 'self' data:; style-src 'self';
+    script-src 'self'; object-src 'none'
 ```
 
 ### Cookies
@@ -138,13 +136,12 @@ Content-Security-Policy: default-src 'self'; script-src 'self';
   - Secure, HttpOnly, SameSite=Lax, Path=/, sin Domain
   - TTL: 15 min de inactividad, renovable
 
-### Master token
+### Sesión y tokens
 
-- Cifrado con rumi.js (IndexedDB, AES-256-GCM)
-- NUNCA en localStorage
-- Revelado con F9 (usabilidad, no seguridad)
-- TTL inactividad: 30 min
-- Rate limiting: 3 intentos / 5 min (Valkey)
+- Login exclusivamente con Google OAuth; sin formularios de token en el navegador
+- Cookie del API: cifrada AES-256-GCM en la sesión del panel, nunca expuesta al navegador
+- Tokens de cliente: handle aleatorio en Valkey consumido con GETDEL; se muestran una sola vez
+- Rate limiting del login: `LOGIN_RATE_LIMIT_REQUESTS` por `LOGIN_RATE_LIMIT_WINDOW_SECONDS`
 
 ### Single session
 
@@ -156,11 +153,9 @@ Content-Security-Policy: default-src 'self'; script-src 'self';
 
 | Operación | Límite | Ventana |
 | --- | --- | --- |
-| Intento master token | 3 | 5 min |
-| Rotación de token | 1 | 1 min |
-| Creación de cliente | 10 | 1 hora |
-| Eliminación de cliente | 5 | 1 hora |
-| Añadir admin | 5 | 1 hora |
+| Login (por IP) | `LOGIN_RATE_LIMIT_REQUESTS` (5) | `LOGIN_RATE_LIMIT_WINDOW_SECONDS` (60 s) |
+
+Las mutaciones de clientes, administradores y ajustes se limitan en el API de control.
 
 ## Despliegue
 

@@ -8,8 +8,8 @@ control de tele-proxy.
 
 - **Framework**: Nette 3.2+ (PHP 8.3+)
 - **Servidor**: FrankenPHP (modo clásico, sin worker) + Caddy
-- **Frontend**: Latte templates + Tabulator + Notiflix + Naja
-- **Auth**: CouchDB (sesiones, logs) + Valkey (single session, rate limiting)
+- **Frontend**: Latte templates + CSS/JS propios (sin CDN)
+- **Auth**: Google OAuth + CouchDB (sesiones, logs) + Valkey (single session, rate limiting)
 - **BFF**: Nette reenvía al API de control (`apiteleproxy.velone.ai`) server-side
 - **Dominio UI**: `admteleproxy.velone.ai`
 
@@ -23,7 +23,8 @@ src/
 │   ├── Infrastructure/   # ApiClientRepository (adaptador → API)
 │   └── UI/               # ClientPresenter + templates
 ├── AdminManagement/      # Slice: Administradores
-├── Authentication/       # Slice: Login, sesión, master token
+├── SettingsManagement/   # Slice: Ajustes globales (GET/PATCH)
+├── Authentication/       # Slice: Login Google, sesión
 └── Shared/               # Infraestructura compartida
     ├── Infrastructure/   # ApiClient, CouchDbConnection, ValkeyConnection, RateLimiter
     └── UI/               # BasePresenter
@@ -83,6 +84,8 @@ Endpoints usados:
 - `GET /api/v1/admin/auth/google/url` — URL de login Google
 - `GET /api/v1/admin/me` — Identidad del admin
 - `GET/POST /api/v1/admin/admins` — CRUD admins
+- `PATCH/DELETE /api/v1/admin/admins/{email}` — Activar/desactivar y baja
+- `GET/PATCH /api/v1/admin/settings` — Ajustes globales
 - `GET/POST /api/v1/admin/clients` — CRUD clientes
 - `POST /api/v1/admin/clients/{id}/rotate-token` — Rotar token
 - `POST /api/v1/admin/clients/{id}/rotate-id` — Rotar crypt_id
@@ -91,8 +94,9 @@ Endpoints usados:
 
 - Cookie sesión: `__Host-teleproxy_admin_ui` (Secure, HttpOnly, SameSite=Lax)
 - Headers: CSP, HSTS, X-Frame-Options, nosniff (gestionados por Caddy)
-- Master token: cifrado con rumi.js (IndexedDB, AES-256-GCM), NUNCA en localStorage
-- Rate limiting: Valkey (3 intentos master token / 5 min)
+- Cookie del API: cifrada AES-256-GCM en la sesión del panel; nunca llega al navegador
+- Tokens de cliente: se entregan una sola vez vía handle en Valkey (GETDEL); nunca en URL, logs ni sesión
+- Rate limiting del login: Valkey (`LOGIN_RATE_LIMIT_*`)
 - Single session: Valkey invalida sesión anterior al hacer login
 - RBAC: solo rol `admin` puede acceder a la UI
 
