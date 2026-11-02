@@ -4,38 +4,28 @@ namespace App\Shared\Infrastructure;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 
 
 class ApiClient
 {
-	private readonly Client $httpClient;
+	private Client $httpClient;
 
 
 	public function __construct(
 		private readonly string $apiUrl,
 	)
 	{
-		$this->httpClient = new Client([
-			'base_uri' => rtrim($this->apiUrl, '/'),
-			'timeout' => 30,
-			'connect_timeout' => 5,
-			'http_errors' => false,
-			'headers' => [
-				'Accept' => 'application/json',
-				'Content-Type' => 'application/json',
-				'X-Admin-UI' => '1',
-			],
-		]);
+		$this->httpClient = $this->buildClient();
 	}
 
 
 	/**
 	 * @param array<string, mixed> $options
 	 */
-	public function get(string $path, array $options = []): Response
+	public function get(string $path, array $options = []): ResponseInterface
 	{
-		return $this->httpClient->get($path, $options);
+		return $this->send('GET', $path, $options);
 	}
 
 
@@ -43,10 +33,11 @@ class ApiClient
 	 * @param array<string, mixed> $data
 	 * @param array<string, mixed> $options
 	 */
-	public function post(string $path, array $data = [], array $options = []): Response
+	public function post(string $path, array $data = [], array $options = []): ResponseInterface
 	{
 		$options['json'] = $data;
-		return $this->httpClient->post($path, $options);
+
+		return $this->send('POST', $path, $options);
 	}
 
 
@@ -54,10 +45,11 @@ class ApiClient
 	 * @param array<string, mixed> $data
 	 * @param array<string, mixed> $options
 	 */
-	public function put(string $path, array $data = [], array $options = []): Response
+	public function put(string $path, array $data = [], array $options = []): ResponseInterface
 	{
 		$options['json'] = $data;
-		return $this->httpClient->put($path, $options);
+
+		return $this->send('PUT', $path, $options);
 	}
 
 
@@ -65,56 +57,74 @@ class ApiClient
 	 * @param array<string, mixed> $data
 	 * @param array<string, mixed> $options
 	 */
-	public function patch(string $path, array $data = [], array $options = []): Response
+	public function patch(string $path, array $data = [], array $options = []): ResponseInterface
 	{
 		$options['json'] = $data;
-		return $this->httpClient->patch($path, $options);
+
+		return $this->send('PATCH', $path, $options);
 	}
 
 
 	/**
 	 * @param array<string, mixed> $options
 	 */
-	public function delete(string $path, array $options = []): Response
+	public function delete(string $path, array $options = []): ResponseInterface
 	{
-		return $this->httpClient->delete($path, $options);
+		return $this->send('DELETE', $path, $options);
+	}
+
+
+	/**
+	 * @param array<string, mixed> $options
+	 */
+	public function send(string $method, string $path, array $options = []): ResponseInterface
+	{
+		try {
+			return $this->httpClient->request($method, $path, $options);
+		} catch (GuzzleException $e) {
+			throw new ApiError(0, 'transport_error', ApiError::defaultMessage(0), null, null, $e);
+		}
+	}
+
+
+	/**
+	 * Envía la petición y lanza ApiError ante cualquier respuesta >= 400.
+	 *
+	 * @param array<string, mixed> $options
+	 * @return array<string, mixed>
+	 */
+	public function json(string $method, string $path, array $options = []): array
+	{
+		$response = $this->send($method, $path, $options);
+
+		if ($response->getStatusCode() >= 400) {
+			throw ApiError::fromResponse($response);
+		}
+
+		$body = (string) $response->getBody();
+		if ($body === '') {
+			return [];
+		}
+
+		$data = json_decode($body, true);
+		if (!is_array($data)) {
+			throw new ApiError(
+				$response->getStatusCode(),
+				'invalid_response',
+				'Respuesta inválida del servicio de administración.',
+			);
+		}
+
+		/** @var array<string, mixed> $data */
+		return $data;
 	}
 
 
 	public function withSessionCookie(string $cookieValue): self
 	{
 		$clone = clone $this;
-		$clone->httpClient = new Client([
-			'base_uri' => rtrim($this->apiUrl, '/'),
-			'timeout' => 30,
-			'connect_timeout' => 5,
-			'http_errors' => false,
-			'headers' => [
-				'Accept' => 'application/json',
-				'Content-Type' => 'application/json',
-				'X-Admin-UI' => '1',
-				'Cookie' => 'teleproxy_admin=' . $cookieValue,
-			],
-		]);
-		return $clone;
-	}
+		$clone->httpClient = $this->buildClient($cookieValue);
 
-
-	public function withMasterToken(string $token): self
-	{
-		$clone = clone $this;
-		$clone->httpClient = new Client([
-			'base_uri' => rtrim($this->apiUrl, '/'),
-			'timeout' => 30,
-			'connect_timeout' => 5,
-			'http_errors' => false,
-			'headers' => [
-				'Accept' => 'application/json',
-				'Content-Type' => 'application/json',
-				'X-Admin-UI' => '1',
-				'Authorization' => 'Bearer ' . $token,
-			],
-		]);
 		return $clone;
 	}
 
@@ -122,5 +132,28 @@ class ApiClient
 	public function getApiUrl(): string
 	{
 		return $this->apiUrl;
+	}
+
+
+	private function buildClient(?string $sessionCookie = null): Client
+	{
+		$headers = [
+			'Accept' => 'application/json',
+			'X-Admin-UI' => '1',
+			'User-Agent' => 'teleproxy-admin/1.0',
+		];
+
+		if ($sessionCookie !== null && $sessionCookie !== '') {
+			$headers['Cookie'] = 'teleproxy_admin=' . $sessionCookie;
+		}
+
+		return new Client([
+			'base_uri' => rtrim($this->apiUrl, '/'),
+			'timeout' => 30,
+			'connect_timeout' => 5,
+			'http_errors' => false,
+			'allow_redirects' => false,
+			'headers' => $headers,
+		]);
 	}
 }

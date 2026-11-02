@@ -44,6 +44,20 @@ class ValkeyConnection
 	}
 
 
+	public function getDel(string $key): ?string
+	{
+		$result = $this->client->eval(
+			"local value = redis.call('GET', KEYS[1]) "
+			. "if value then redis.call('DEL', KEYS[1]) end "
+			. 'return value',
+			1,
+			$key,
+		);
+
+		return $result === null ? null : (string) $result;
+	}
+
+
 	public function incr(string $key): int
 	{
 		return (int) $this->client->incr($key);
@@ -58,7 +72,7 @@ class ValkeyConnection
 
 	public function exists(string $key): bool
 	{
-		return (bool) $this->client->exists([$key]);
+		return (bool) $this->client->exists($key);
 	}
 
 

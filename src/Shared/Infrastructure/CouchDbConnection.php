@@ -31,6 +31,9 @@ class CouchDbConnection
 	}
 
 
+	/**
+	 * @return array<string, mixed>|null
+	 */
 	public function get(string $docId): ?array
 	{
 		$response = $this->httpClient->get('/' . $this->database . '/' . urlencode($docId));
@@ -43,6 +46,9 @@ class CouchDbConnection
 	}
 
 
+	/**
+	 * @param array<string, mixed> $data
+	 */
 	public function put(string $docId, array $data): bool
 	{
 		$response = $this->httpClient->put(
@@ -66,6 +72,7 @@ class CouchDbConnection
 
 	/**
 	 * @param array<string, mixed> $query
+	 * @return list<array<string, mixed>>
 	 */
 	public function find(array $query): array
 	{
@@ -79,6 +86,9 @@ class CouchDbConnection
 	}
 
 
+	/**
+	 * @param array<string, mixed> $data
+	 */
 	public function logEvent(string $event, string $userEmail, array $data = []): bool
 	{
 		$doc = array_merge([
