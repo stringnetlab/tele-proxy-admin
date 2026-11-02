@@ -2465,16 +2465,16 @@
         },
         {
             "name": "nette/phpstan-rules",
-            "version": "v1.0.6",
+            "version": "v1.0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nette/phpstan-rules.git",
-                "reference": "3a2b5959955c672e0667ff70ff3ee0d7b2a97873"
+                "reference": "d6decf3a49c4ea935105ffc72965c6ce506a67e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nette/phpstan-rules/zipball/3a2b5959955c672e0667ff70ff3ee0d7b2a97873",
-                "reference": "3a2b5959955c672e0667ff70ff3ee0d7b2a97873",
+                "url": "https://api.github.com/repos/nette/phpstan-rules/zipball/d6decf3a49c4ea935105ffc72965c6ce506a67e5",
+                "reference": "d6decf3a49c4ea935105ffc72965c6ce506a67e5",
                 "shasum": ""
             },
             "require": {
@@ -2518,18 +2518,21 @@
                     "homepage": "https://davidgrudl.com"
                 }
             ],
-            "description": "🐘 PHPStan rules and type extensions for Nette libraries",
-            "homepage": "https://nette.org",
+            "description": "🐘 PHPStan Rules: makes PHPStan understand Nette, with precise return types, typed database rows and fewer false positives.",
+            "homepage": "https://doc.nette.org/tools/phpstan-rules",
             "keywords": [
                 "PHPStan",
                 "nette",
-                "static analysis"
+                "phpstan extension",
+                "phpstan rules",
+                "static analysis",
+                "type inference"
             ],
             "support": {
                 "issues": "https://github.com/nette/phpstan-rules/issues",
-                "source": "https://github.com/nette/phpstan-rules/tree/v1.0.6"
+                "source": "https://github.com/nette/phpstan-rules/tree/v1.0.7"
             },
-            "time": "2026-09-12T22:38:54+00:00"
+            "time": "2026-10-22T02:05:00+00:00"
         },
         {
             "name": "nette/tester",
@@ -2834,11 +2837,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.1",
+            "version": "2.3.4",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f20ce6f3c82556cfcfc086b152445a12d1d64fff",
+                "reference": "f20ce6f3c82556cfcfc086b152445a12d1d64fff",
                 "shasum": ""
             },
             "require": {
@@ -2894,7 +2897,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-08T21:09:11+00:00"
+            "time": "2026-10-28T22:38:53+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
