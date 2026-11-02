@@ -1,0 +1,110 @@
+{block content}
+<div class="page-header">
+	<h2>Ajustes globales</h2>
+</div>
+
+<div class="form-container">
+	{form settingsForm}
+		<p class="muted">
+			Solo se envían los campos que cambian. Los valores se aplican en caliente, sin redeploy.
+		</p>
+
+		<h3>Origen</h3>
+
+		<div class="form-group">
+			{label upstream_user_agent}User-Agent del origen{/label}
+			{input upstream_user_agent}
+			<small class="muted">Vacío = el User-Agent de la librería HTTP. Máximo 256 caracteres, sin saltos de línea.</small>
+		</div>
+
+		<div class="form-group">
+			{label upstream_timeout_secs}Timeout del origen (s){/label}
+			{input upstream_timeout_secs min => 1, max => 300}
+			<small class="muted">Rango 1&ndash;300. Actual: {$settings->upstreamTimeoutSecs}.</small>
+		</div>
+
+		<h3>Respuestas y caché</h3>
+
+		<div class="form-group">
+			{label max_response_bytes}Tamaño máximo de respuesta (bytes){/label}
+			{input max_response_bytes min => 1048576, max => 536870912}
+			<small class="muted">Rango 1 MiB&ndash;512 MiB. Actual: {$settings->maxResponseBytes}.</small>
+		</div>
+
+		<div class="form-group">
+			{label cacheable_size_bytes}Tamaño máximo cacheable (bytes){/label}
+			{input cacheable_size_bytes min => 1024, max => 536870912}
+			<small class="muted">Rango 1 KiB&ndash;512 MiB y nunca mayor que max_response_bytes. Actual: {$settings->cacheableSizeBytes}.</small>
+		</div>
+
+		<div class="form-group">
+			{label stale_cache_ttl_secs}TTL de caché obsoleta (s){/label}
+			{input stale_cache_ttl_secs min => 60, max => 604800}
+			<small class="muted">Rango 60&ndash;604800. Actual: {$settings->staleCacheTtlSecs}.</small>
+		</div>
+
+		<div class="form-group">
+			{label cache_ttl_images_secs}TTL caché de imágenes (s){/label}
+			{input cache_ttl_images_secs min => 1, max => 604800}
+			<small class="muted">Rango 1&ndash;604800. Actual: {$settings->cacheTtlImagesSecs}.</small>
+		</div>
+
+		<div class="form-group">
+			{label cache_ttl_assets_secs}TTL caché de assets (s){/label}
+			{input cache_ttl_assets_secs min => 1, max => 604800}
+			<small class="muted">Rango 1&ndash;604800. Actual: {$settings->cacheTtlAssetsSecs}.</small>
+		</div>
+
+		<div class="form-group">
+			{label cache_ttl_default_secs}TTL caché por defecto (s){/label}
+			{input cache_ttl_default_secs min => 1, max => 604800}
+			<small class="muted">Rango 1&ndash;604800. Actual: {$settings->cacheTtlDefaultSecs}.</small>
+		</div>
+
+		<h3>Lua y timeouts</h3>
+
+		<div class="form-group">
+			{label lua_timeout_ms}Timeout de Lua (ms){/label}
+			{input lua_timeout_ms min => 1, max => 60000}
+			<small class="muted">Rango 1&ndash;60000. Actual: {$settings->luaTimeoutMs}.</small>
+		</div>
+
+		<div class="form-group">
+			{label lua_memory_limit_mb}Memoria máxima de Lua (MB){/label}
+			{input lua_memory_limit_mb min => 1, max => 1024}
+			<small class="muted">Rango 1&ndash;1024. Actual: {$settings->luaMemoryLimitMb}.</small>
+		</div>
+
+		<div class="form-group">
+			{label webhook_timeout_ms}Timeout de webhooks (ms){/label}
+			{input webhook_timeout_ms min => 1, max => 60000}
+			<small class="muted">Rango 1&ndash;60000. Actual: {$settings->webhookTimeoutMs}.</small>
+		</div>
+
+		<div class="form-group">
+			{label fallback_timeout_ms}Timeout de fallbacks (ms){/label}
+			{input fallback_timeout_ms min => 1, max => 60000}
+			<small class="muted">Rango 1&ndash;60000. Actual: {$settings->fallbackTimeoutMs}.</small>
+		</div>
+
+		<h3>Diagnóstico</h3>
+
+		<div class="form-group">
+			<label>
+				{input verbose_errors}
+				Activar verbose_errors
+			</label>
+			<small class="muted">
+				Expone el motivo interno en los errores de <code>/aq/</code> y de las APIs.
+				El API registra un aviso al activarlo. Actual: {if $settings->verboseErrors}activo{else}inactivo{/if}.
+			</small>
+		</div>
+
+		{input errors}
+
+		<div class="form-actions">
+			{input save class => 'btn btn-primary'}
+		</div>
+	{/form}
+</div>
+{/block}
